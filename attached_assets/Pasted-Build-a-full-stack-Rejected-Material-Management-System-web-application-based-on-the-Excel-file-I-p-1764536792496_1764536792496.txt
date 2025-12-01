@@ -1,0 +1,122 @@
+Build a full-stack “Rejected Material Management System” web application based on the Excel file I previously uploaded.
+The application must extract the data structure, columns, and fields directly from the Excel file and generate the database schema automatically.
+
+General Requirements
+
+Full-stack app: Frontend + Backend + Database API.
+
+Frontend language: English
+
+Clean, modern UI with responsive design.
+
+Authentication system with multiple user roles:
+
+Inspector / User → Can submit rejection reports
+
+Quality Team Leader → Can review, comment, approve
+
+Department Manager → Full access, analytics dashboard, and reporting
+
+Image upload feature to attach defect photos (support multiple images per record).
+
+File storage can be local, AWS S3, Firebase, or platform default.
+
+Core Features
+
+Create “Rejected Material Report”
+
+Auto-generate report number
+
+Pull dropdown lists (e.g., product, material, machine, defect category…) based on the Excel file columns
+
+Date/time auto-captured
+
+Text fields for comments / corrective actions
+
+Upload 1–10 images
+
+Dashboard
+
+Filters (date, product, defect type, supplier, machine, shift)
+
+KPIs (total rejections, category breakdown, supplier ranking)
+
+Graphs: bar chart, pie chart, trend chart
+
+User Management
+
+Add users
+
+Assign roles
+
+Reset passwords
+
+Activity log
+
+Admin Panel
+
+Manage master data (materials, defect categories, suppliers…)
+
+Import/update data from new Excel files
+
+Export reports (PDF, Excel)
+
+API Requirements
+
+REST or GraphQL API
+
+JWT authentication
+
+Endpoints to upload images, store reports, fetch analytics, and manage users
+
+Database
+
+Auto-generated based on Excel structure
+
+Recommended: PostgreSQL / MySQL / MongoDB
+
+Technical Stack (preferred but flexible)
+
+Frontend: React (Next.js) or Vue
+
+Backend: Node.js (Express / NestJS)
+
+Database: PostgreSQL or MongoDB
+
+Storage: AWS S3 / Firebase / Local file system
+
+Auth: JWT + Role-based authorization
+
+Additional Requirements
+
+Every rejection entry must have:
+
+Unique ID
+
+Status (Submitted → Under Review → Approved → Closed)
+
+Image gallery
+
+Audit trail: who created/edited/approved
+
+Allow managers to add comments and corrective actions
+
+Show notifications when a new rejection is submitted
+
+Search bar with fuzzy search
+
+Deliverables
+
+Complete working full-stack application
+
+Source code (frontend + backend)
+
+Database schema
+
+API documentation
+
+Instructions for hosting & deployment
+
+Option to export all data as Excel file
+
+Clean and professional UI with proper form validation

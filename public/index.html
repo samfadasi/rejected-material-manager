@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>نظام تسجيل المواد المرفوضة</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            padding: 30px;
+            max-width: 600px;
+            width: 100%;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 24px;
+        }
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+            font-family: Arial, sans-serif;
+        }
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 5px rgba(102, 126, 234, 0.3);
+        }
+        .file-input-wrapper {
+            position: relative;
+            overflow: hidden;
+        }
+        .file-input-wrapper input[type=file] {
+            position: absolute;
+            left: -9999px;
+        }
+        .file-label {
+            background: #f0f0f0;
+            border: 2px dashed #667eea;
+            padding: 15px;
+            border-radius: 5px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .file-label:hover {
+            background: #e8e8ff;
+            border-color: #764ba2;
+        }
+        .file-label.has-files {
+            border-style: solid;
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+        .file-count {
+            margin-top: 8px;
+            font-size: 13px;
+            color: #666;
+        }
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 30px;
+        }
+        button {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .btn-submit {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        .btn-list {
+            background: #f0f0f0;
+            color: #333;
+        }
+        .btn-list:hover {
+            background: #e0e0e0;
+        }
+        .alert {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            text-align: center;
+            display: none;
+        }
+        .alert.success {
+            background: #c8e6c9;
+            color: #2e7d32;
+            border: 1px solid #2e7d32;
+            display: block;
+        }
+        .alert.error {
+            background: #ffcdd2;
+            color: #c62828;
+            border: 1px solid #c62828;
+            display: block;
+        }
+        .loading {
+            display: none;
+            text-align: center;
+            color: #667eea;
+        }
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📦 نظام تسجيل المواد المرفوضة</h1>
+        <p class="subtitle">تسجيل جديد للمواد المرفوضة</p>
+
+        <form id="rejectionForm">
+            <div class="form-group">
+                <label for="materialType">نوع المادة *</label>
+                <select id="materialType" name="materialType" required>
+                    <option value="">اختر نوع المادة</option>
+                    <option value="خام">خام</option>
+                    <option value="نصف مصنع">نصف مصنع</option>
+                    <option value="مصنع">مصنع</option>
+                    <option value="مكونات">مكونات</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="materialName">اسم المادة *</label>
+                <input type="text" id="materialName" name="materialName" required placeholder="مثال: الفولاذ الصحي">
+            </div>
+
+            <div class="form-group">
+                <label for="supplierName">اسم المورد *</label>
+                <input type="text" id="supplierName" name="supplierName" required placeholder="مثال: شركة النقاء">
+            </div>
+
+            <div class="form-group">
+                <label for="defectCategory">فئة العيب *</label>
+                <select id="defectCategory" name="defectCategory" required>
+                    <option value="">اختر فئة العيب</option>
+                    <option value="تشويه">تشويه</option>
+                    <option value="صدأ">صدأ</option>
+                    <option value="كسر">كسر</option>
+                    <option value="خدوش">خدوش</option>
+                    <option value="أبعاد خاطئة">أبعاد خاطئة</option>
+                    <option value="تلون">تلون</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="defectDescription">وصف العيب *</label>
+                <textarea id="defectDescription" name="defectDescription" required placeholder="صف العيب بالتفصيل"></textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="quantityRejected">الكمية المرفوضة *</label>
+                <input type="number" id="quantityRejected" name="quantityRejected" min="1" required placeholder="0">
+            </div>
+
+            <div class="form-group">
+                <label for="shift">الوردية *</label>
+                <select id="shift" name="shift" required>
+                    <option value="">اختر الوردية</option>
+                    <option value="صباح">صباح</option>
+                    <option value="عصر">عصر</option>
+                    <option value="ليل">ليل</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="processArea">منطقة العملية *</label>
+                <input type="text" id="processArea" name="processArea" required placeholder="مثال: قسم الصب">
+            </div>
+
+            <div class="form-group">
+                <label>رفع الصور (1-10 صور)</label>
+                <div class="file-input-wrapper">
+                    <label for="images" class="file-label" id="fileLabel">
+                        📸 اضغط هنا لاختيار الصور أو اسحب الملفات هنا
+                    </label>
+                    <input type="file" id="images" name="images" accept="image/*" multiple>
+                </div>
+                <div class="file-count" id="fileCount"></div>
+            </div>
+
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>جاري التسجيل...</p>
+            </div>
+
+            <div class="button-group">
+                <button type="submit" class="btn-submit">✔️ تسجيل الرفض</button>
+                <button type="button" class="btn-list" onclick="goToList()">📋 عرض القائمة</button>
+            </div>
+
+            <div class="alert" id="alert"></div>
+        </form>
+    </div>
+
+    <script>
+        const form = document.getElementById('rejectionForm');
+        const imagesInput = document.getElementById('images');
+        const fileLabel = document.getElementById('fileLabel');
+        const fileCount = document.getElementById('fileCount');
+        const alert = document.getElementById('alert');
+        const loading = document.getElementById('loading');
+
+        imagesInput.addEventListener('change', updateFileCount);
+        fileLabel.addEventListener('dragover', handleDragOver);
+        fileLabel.addEventListener('dragleave', handleDragLeave);
+        fileLabel.addEventListener('drop', handleDrop);
+
+        function updateFileCount() {
+            const count = imagesInput.files.length;
+            if (count > 0) {
+                fileLabel.classList.add('has-files');
+                fileCount.textContent = `✔️ تم تحديد ${count} صورة`;
+            } else {
+                fileLabel.classList.remove('has-files');
+                fileCount.textContent = '';
+            }
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            fileLabel.style.background = '#e8e8ff';
+        }
+
+        function handleDragLeave(e) {
+            e.preventDefault();
+            fileLabel.style.background = '#f0f0f0';
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            fileLabel.style.background = '#f0f0f0';
+            imagesInput.files = e.dataTransfer.files;
+            updateFileCount();
+        }
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            loading.style.display = 'block';
+            alert.style.display = 'none';
+
+            const formData = new FormData(form);
+            
+            try {
+                const response = await fetch('/api/rejections/create', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showAlert('✔️ ' + result.message, 'success');
+                    form.reset();
+                    updateFileCount();
+                    setTimeout(() => {
+                        form.reset();
+                    }, 2000);
+                } else {
+                    showAlert('❌ ' + result.message, 'error');
+                }
+            } catch (error) {
+                showAlert('❌ خطأ في الاتصال بالخادم', 'error');
+                console.error(error);
+            } finally {
+                loading.style.display = 'none';
+            }
+        });
+
+        function showAlert(message, type) {
+            alert.textContent = message;
+            alert.className = `alert ${type}`;
+            alert.style.display = 'block';
+        }
+
+        function goToList() {
+            window.location.href = '/list';
+        }
+    </script>
+</body>
+</html>

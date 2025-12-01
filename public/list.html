@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>قائمة المواد المرفوضة</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            padding: 30px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 24px;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .btn-new {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .btn-new:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        .btn-delete {
+            background: #ffcdd2;
+            color: #c62828;
+            padding: 5px 10px;
+            font-size: 12px;
+        }
+        .btn-delete:hover {
+            background: #ef5350;
+            color: white;
+        }
+        .loading {
+            text-align: center;
+            color: #667eea;
+            padding: 40px;
+        }
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+        .table-wrapper {
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th {
+            background: #f5f5f5;
+            padding: 15px;
+            text-align: right;
+            border-bottom: 2px solid #ddd;
+            font-weight: bold;
+            color: #333;
+        }
+        td {
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+        }
+        tr:hover {
+            background: #f9f9f9;
+        }
+        .rejection-card {
+            margin-bottom: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        .rejection-header {
+            background: #f5f5f5;
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .rejection-id {
+            font-weight: bold;
+            color: #667eea;
+        }
+        .rejection-body {
+            padding: 15px;
+        }
+        .info-row {
+            display: flex;
+            margin-bottom: 10px;
+            gap: 15px;
+        }
+        .info-item {
+            flex: 1;
+        }
+        .info-label {
+            font-weight: bold;
+            color: #666;
+            font-size: 12px;
+            margin-bottom: 3px;
+        }
+        .info-value {
+            color: #333;
+        }
+        .images {
+            margin-top: 15px;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 10px;
+        }
+        .image-thumb {
+            width: 100px;
+            height: 100px;
+            object-fit: cover;
+            border-radius: 5px;
+            cursor: pointer;
+            border: 1px solid #ddd;
+        }
+        .timestamp {
+            font-size: 12px;
+            color: #999;
+            margin-top: 10px;
+        }
+        .alert {
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        .alert.success {
+            background: #c8e6c9;
+            color: #2e7d32;
+            border: 1px solid #2e7d32;
+        }
+        .alert.error {
+            background: #ffcdd2;
+            color: #c62828;
+            border: 1px solid #c62828;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📋 قائمة المواد المرفوضة</h1>
+        
+        <div class="header">
+            <button class="btn btn-new" onclick="goToNew()">➕ تسجيل جديد</button>
+            <button class="btn btn-new" onclick="refreshList()">🔄 تحديث</button>
+        </div>
+
+        <div class="alert" id="alert"></div>
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>جاري تحميل البيانات...</p>
+        </div>
+
+        <div id="content" style="display: none;">
+            <div id="rejectionsList"></div>
+        </div>
+    </div>
+
+    <script>
+        const content = document.getElementById('content');
+        const loading = document.getElementById('loading');
+        const rejectionsList = document.getElementById('rejectionsList');
+        const alert = document.getElementById('alert');
+
+        async function loadRejections() {
+            loading.style.display = 'block';
+            content.style.display = 'none';
+            
+            try {
+                const response = await fetch('/api/rejections');
+                const result = await response.json();
+
+                if (result.success) {
+                    displayRejections(result.data);
+                } else {
+                    showAlert('خطأ في جلب البيانات', 'error');
+                }
+            } catch (error) {
+                showAlert('خطأ في الاتصال بالخادم', 'error');
+                console.error(error);
+            } finally {
+                loading.style.display = 'none';
+                content.style.display = 'block';
+            }
+        }
+
+        function displayRejections(rejections) {
+            if (rejections.length === 0) {
+                rejectionsList.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📭</div>
+                        <p>لا توجد تسجيلات</p>
+                    </div>
+                `;
+                return;
+            }
+
+            rejectionsList.innerHTML = rejections.map(rejection => `
+                <div class="rejection-card">
+                    <div class="rejection-header">
+                        <div>
+                            <span class="rejection-id">#${rejection.id}</span>
+                            <span style="color: #666; margin-right: 10px;">${rejection.materialName}</span>
+                        </div>
+                        <button class="btn btn-delete" onclick="deleteRejection(${rejection.id})">حذف</button>
+                    </div>
+                    <div class="rejection-body">
+                        <div class="info-row">
+                            <div class="info-item">
+                                <div class="info-label">نوع المادة</div>
+                                <div class="info-value">${rejection.materialType}</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">اسم المورد</div>
+                                <div class="info-value">${rejection.supplierName}</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">فئة العيب</div>
+                                <div class="info-value">${rejection.defectCategory}</div>
+                            </div>
+                        </div>
+                        <div class="info-row">
+                            <div class="info-item">
+                                <div class="info-label">وصف العيب</div>
+                                <div class="info-value">${rejection.defectDescription}</div>
+                            </div>
+                        </div>
+                        <div class="info-row">
+                            <div class="info-item">
+                                <div class="info-label">الكمية المرفوضة</div>
+                                <div class="info-value">${rejection.quantityRejected}</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">الوردية</div>
+                                <div class="info-value">${rejection.shift}</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">منطقة العملية</div>
+                                <div class="info-value">${rejection.processArea}</div>
+                            </div>
+                        </div>
+                        ${rejection.images && rejection.images.length > 0 ? `
+                            <div class="images">
+                                ${rejection.images.map(img => `
+                                    <img src="/uploads/${img}" alt="صورة" class="image-thumb" onclick="viewImage('/uploads/${img}')">
+                                `).join('')}
+                            </div>
+                        ` : ''}
+                        <div class="timestamp">
+                            📅 ${new Date(rejection.createdAt).toLocaleString('ar-SA')}
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function deleteRejection(id) {
+            if (!confirm('هل تريد فعلاً حذف هذا التسجيل؟')) return;
+
+            try {
+                const response = await fetch(`/api/rejections/${id}`, {
+                    method: 'DELETE'
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    showAlert('✔️ تم حذف التسجيل بنجاح', 'success');
+                    loadRejections();
+                } else {
+                    showAlert('❌ ' + result.message, 'error');
+                }
+            } catch (error) {
+                showAlert('❌ خطأ في الاتصال بالخادم', 'error');
+            }
+        }
+
+        function showAlert(message, type) {
+            alert.textContent = message;
+            alert.className = `alert ${type}`;
+            alert.style.display = 'block';
+            setTimeout(() => {
+                alert.style.display = 'none';
+            }, 3000);
+        }
+
+        function goToNew() {
+            window.location.href = '/';
+        }
+
+        function refreshList() {
+            loadRejections();
+        }
+
+        function viewImage(src) {
+            window.open(src, '_blank');
+        }
+
+        loadRejections();
+    </script>
+</body>
+</html>
