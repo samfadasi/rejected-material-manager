@@ -9,7 +9,8 @@ exports.createRejection = (req, res) => {
       defectCategory,
       defectDescription,
       quantityRejected,
-      shift,
+      shiftCode,
+      shiftTime,
       processArea
     } = req.body;
 
@@ -23,7 +24,8 @@ exports.createRejection = (req, res) => {
         defectCategory,
         defectDescription,
         quantityRejected,
-        shift,
+        shiftCode,
+        shiftTime,
         processArea
       },
       imageFiles
@@ -31,13 +33,13 @@ exports.createRejection = (req, res) => {
 
     res.status(201).json({
       success: true,
-      message: 'تم تسجيل الرفض بنجاح',
+      message: 'Rejection submitted successfully',
       data: rejection
     });
   } catch (error) {
     res.status(400).json({
       success: false,
-      message: 'خطأ في تسجيل الرفض',
+      message: 'Error submitting rejection',
       error: error.message
     });
   }
@@ -53,7 +55,7 @@ exports.getAllRejections = (req, res) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'خطأ في جلب البيانات',
+      message: 'Error fetching data',
       error: error.message
     });
   }
@@ -65,7 +67,7 @@ exports.getRejection = (req, res) => {
     if (!rejection) {
       return res.status(404).json({
         success: false,
-        message: 'لم يتم العثور على الرفض'
+        message: 'Rejection not found'
       });
     }
     res.status(200).json({
@@ -75,7 +77,7 @@ exports.getRejection = (req, res) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'خطأ في جلب البيانات',
+      message: 'Error fetching data',
       error: error.message
     });
   }
@@ -86,12 +88,12 @@ exports.deleteRejection = (req, res) => {
     RejectionModel.deleteRejection(req.params.id);
     res.status(200).json({
       success: true,
-      message: 'تم حذف الرفض بنجاح'
+      message: 'Rejection deleted successfully'
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'خطأ في حذف الرفض',
+      message: 'Error deleting rejection',
       error: error.message
     });
   }

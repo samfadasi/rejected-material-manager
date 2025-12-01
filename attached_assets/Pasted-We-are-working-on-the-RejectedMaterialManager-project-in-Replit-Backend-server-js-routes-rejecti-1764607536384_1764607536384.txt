@@ -1,0 +1,178 @@
+We are working on the RejectedMaterialManager project in Replit.
+Backend: server.js + routes/rejectionsRoutes.js + models/rejection.js
+Frontend: public/index.html (form) and public/list.html (table view).
+
+I need you to fix two remaining issues in a very concrete way, by directly editing the files (no explanations, just code changes):
+
+1) Shifts: two separate categories (A/B and Day/Night)
+
+In public/index.html, update the form so that instead of a single “shift” select, we have two separate selects:
+
+shiftCode with options:
+
+value A, label Shift A
+
+value B, label Shift B
+
+shiftTime with options:
+
+value DAY, label Day
+
+value NIGHT, label Night
+
+For example in the form markup:
+
+<div>
+  <label>Shift Code</label><br />
+  <select name="shiftCode">
+    <option value="A">Shift A</option>
+    <option value="B">Shift B</option>
+  </select>
+</div>
+<div>
+  <label>Shift Time</label><br />
+  <select name="shiftTime">
+    <option value="DAY">Day</option>
+    <option value="NIGHT">Night</option>
+  </select>
+</div>
+
+
+In models/rejection.js, update the schema so we have both fields instead of a single generic shift:
+
+shiftCode: {
+  type: String,
+  enum: ['A', 'B'],
+  default: 'A'
+},
+shiftTime: {
+  type: String,
+  enum: ['DAY', 'NIGHT'],
+  default: 'DAY'
+},
+
+
+If there is an old shift field, either remove it or keep it but stop using it; from now on use shiftCode and shiftTime.
+
+In the controller (controllers/rejectionsController.js or wherever the POST /api/rejections/create is handled), make sure we read these from req.body and save them:
+
+const {
+  materialType,
+  materialName,
+  supplierName,
+  defectCategory,
+  defectDescription,
+  quantityRejected,
+  processArea,
+  shiftCode,
+  shiftTime,
+  // ... other fields
+} = req.body;
+
+
+In public/list.html, update the table to display both shiftCode and shiftTime in separate columns:
+
+Add headers Shift Code and Shift Time.
+
+When rendering rows, read and display item.shiftCode and item.shiftTime.
+
+2) Defect Category: dynamic options based on Material Type (RAW vs PACKING)
+
+Right now, the “Defect Category” select is empty or static. I need it to change automatically based on the selected material type.
+
+In public/index.html, ensure we have:
+
+<select id="materialType" name="materialType" onchange="updateDefects()">
+  <option value="RAW">Raw Material</option>
+  <option value="PACKING">Packing Material</option>
+</select>
+
+<select id="defectCategory" name="defectCategory"></select>
+
+
+At the bottom of public/index.html (before </body>), add or fix a <script> block so that:
+
+It defines two arrays of defect options:
+
+For RAW:
+
+Contamination
+
+Foreign body
+
+Wrong specification
+
+Off odour / taste
+
+Moisture out of spec
+
+For PACKING:
+
+Low printing quality
+
+Misaligned print
+
+Seal leak
+
+Pinholes in foil
+
+Wrong artwork / text
+
+Barcode unreadable
+
+Carton/box damage
+
+Implement it like this (or equivalent):
+
+const defectOptions = {
+  RAW: [
+    'Contamination',
+    'Foreign body',
+    'Wrong specification',
+    'Off odour / taste',
+    'Moisture out of spec'
+  ],
+  PACKING: [
+    'Low printing quality',
+    'Misaligned print',
+    'Seal leak',
+    'Pinholes in foil',
+    'Wrong artwork / text',
+    'Barcode unreadable',
+    'Carton/box damage'
+  ]
+};
+
+function updateDefects() {
+  const type = document.getElementById('materialType').value;
+  const select = document.getElementById('defectCategory');
+  select.innerHTML = '';
+  const list = defectOptions[type] || [];
+  list.forEach(label => {
+    const opt = document.createElement('option');
+    opt.value = label;
+    opt.textContent = label;
+    select.appendChild(opt);
+  });
+}
+
+document.addEventListener('DOMContentLoaded', updateDefects);
+
+
+Make sure the IDs used in the JavaScript (materialType and defectCategory) exactly match the IDs in the HTML, and that updateDefects() is called both on DOMContentLoaded and on onchange of the material type select.
+
+The backend controller must continue to read defectCategory from req.body and save it; no extra changes needed beyond ensuring the field exists in the schema.
+
+After applying these changes, the application should work like this:
+
+In the form:
+
+“Material Type” = Raw/Packing.
+
+“Defect Category” automatically updates with the correct list for the chosen type.
+
+There are two shift fields: Shift Code (A/B) and Shift Time (Day/Night).
+
+In the list page, each rejection shows both shiftCode and shiftTime and the selected defect category.
+
+Please directly edit the relevant files (public/index.html, public/list.html, models/rejection.js, controllers/rejectionsController.js, and any related route file) so everything compiles and runs without errors.

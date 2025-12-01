@@ -284,9 +284,15 @@
                                 <div class="info-value">${rejection.quantityRejected}</div>
                             </div>
                             <div class="info-item">
-                                <div class="info-label">Shift</div>
-                                <div class="info-value">${rejection.shift === 'A' ? 'Day (A)' : rejection.shift === 'B' ? 'Night (B)' : rejection.shift}</div>
+                                <div class="info-label">Shift Code</div>
+                                <div class="info-value">Shift ${rejection.shiftCode}</div>
                             </div>
+                            <div class="info-item">
+                                <div class="info-label">Shift Time</div>
+                                <div class="info-value">${rejection.shiftTime}</div>
+                            </div>
+                        </div>
+                        <div class="info-row">
                             <div class="info-item">
                                 <div class="info-label">Process Area</div>
                                 <div class="info-value">${rejection.processArea}</div>
