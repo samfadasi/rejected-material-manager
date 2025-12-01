@@ -1,0 +1,130 @@
+نريد تعديل مشروع RejectedMaterialManager في Replit بحيث نضيف حقل جديد يسمى "Quantity Unit" والذي يصف نوع كمية الرفض، ويكون عبارة عن قائمة اختيار جاهزة تحتوي على:
+
+- REEL
+- INNER-CASES
+- CARTON
+- SLEEVE
+- KG
+
+نريد تنفيذ التعديل في الـ backend وفي الـ frontend كما يلي:
+
+========================================
+1) تعديل الموديل models/rejection.js
+========================================
+
+أضف حقل جديد:
+
+```js
+quantityUnit: {
+  type: String,
+  enum: ['REEL', 'INNER-CASES', 'CARTON', 'SLEEVE', 'KG'],
+  required: true
+}
+تأكد أن quantityRejected يبقى كما هو (رقم فقط).
+
+========================================
+2) تعديل الـ Controller الخاص بإنشاء الرفض
+في controller POST /api/rejections/create، عدّل destructuring ليشمل:
+
+js
+Copy code
+const {
+  materialType,
+  materialName,
+  supplierName,
+  defectCategory,
+  defectDescription,
+  quantityRejected,
+  quantityUnit,
+  processArea,
+  shiftCode,
+  shiftTime,
+  inspectorName,
+  inspectorEmployeeId,
+  rejectionDateTime
+} = req.body;
+وتأكد أن quantityUnit يتم تمريره إلى create:
+
+js
+Copy code
+quantityUnit,
+========================================
+3) تعديل الصفحة الأمامية public/index.html
+في نموذج الإدخال، أضف حقل اختيار جديد تحت quantityRejected:
+
+html
+Copy code
+<div>
+  <label>Quantity Unit</label><br />
+  <select name="quantityUnit" required>
+    <option value="REEL">REEL</option>
+    <option value="INNER-CASES">INNER-CASES</option>
+    <option value="CARTON">CARTON</option>
+    <option value="SLEEVE">SLEEVE</option>
+    <option value="KG">KG</option>
+  </select>
+</div>
+========================================
+4) تعديل صفحة عرض القائمة public/list.html
+أضف عمودين:
+
+Quantity Rejected
+
+Quantity Unit
+
+في رأس الجدول:
+
+html
+Copy code
+<th>Quantity Rejected</th>
+<th>Quantity Unit</th>
+وفي الصف لكل عنصر:
+
+html
+Copy code
+<td>${item.quantityRejected || ''}</td>
+<td>${item.quantityUnit || ''}</td>
+========================================
+5) التحقق النهائي
+بعد التعديل يجب أن:
+
+يعرض النموذج حقل Quantity Unit إلزامي.
+
+يرسل النموذج القيمة المختارة إلى backend مع quantityRejected.
+
+يخزن backend القيمة في الـ DB داخل quantityUnit.
+
+تظهر القيمة في صفحة list بشكل صحيح.
+
+markdown
+Copy code
+
+---
+
+# ✅ بعد ما تشغّل البرومبت:
+
+### جرّب فوراً:
+
+1. افتح صفحة الإدخال  
+2. اكتب كمية، مثلاً:  
+   - **Quantity Rejected = 55**  
+   - **Quantity Unit = INNER-CASES**  
+3. Submit  
+4. افتح `/list`  
+5. تأكد إنو ظهر:
+
+| Qty Rejected | Unit         |
+|--------------|--------------|
+| 55           | INNER-CASES  |
+
+ولو داير نضيف **تصنيف آخر** أو **نجعله مرتبط بنوع المادة RAW/PACKING** ممكن نعملها كذلك.
+
+بس الآن خلينا نثبت الوحدة دي أول.
+
+لو جاهز نضيف “Auto-sum per unit” أو “تحويل تلقائي” أو سنوات صلاحية—قول لي.
+
+
+
+
+
+

@@ -12,6 +12,7 @@ class RejectionModel {
       defectCategory: data.defectCategory,
       defectDescription: data.defectDescription,
       quantityRejected: data.quantityRejected,
+      quantityUnit: data.quantityUnit,
       processArea: data.processArea,
       shiftCode: data.shiftCode,
       shiftTime: data.shiftTime,
