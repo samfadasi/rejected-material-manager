@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>قائمة المواد المرفوضة</title>
+    <title>Rejected Material Reports</title>
     <style>
         * {
             margin: 0;
@@ -25,7 +25,7 @@
             margin: 0 auto;
         }
         h1 {
-            text-align: center;
+            text-align: left;
             color: #333;
             margin-bottom: 10px;
             font-size: 24px;
@@ -103,7 +103,7 @@
         th {
             background: #f5f5f5;
             padding: 15px;
-            text-align: right;
+            text-align: left;
             border-bottom: 2px solid #ddd;
             font-weight: bold;
             color: #333;
@@ -191,17 +191,17 @@
 </head>
 <body>
     <div class="container">
-        <h1>📋 قائمة المواد المرفوضة</h1>
+        <h1>📋 Rejected Material Reports</h1>
         
         <div class="header">
-            <button class="btn btn-new" onclick="goToNew()">➕ تسجيل جديد</button>
-            <button class="btn btn-new" onclick="refreshList()">🔄 تحديث</button>
+            <button class="btn btn-new" onclick="goToNew()">➕ New Report</button>
+            <button class="btn btn-new" onclick="refreshList()">🔄 Refresh</button>
         </div>
 
         <div class="alert" id="alert"></div>
         <div class="loading" id="loading">
             <div class="spinner"></div>
-            <p>جاري تحميل البيانات...</p>
+            <p>Loading data...</p>
         </div>
 
         <div id="content" style="display: none;">
@@ -226,10 +226,10 @@
                 if (result.success) {
                     displayRejections(result.data);
                 } else {
-                    showAlert('خطأ في جلب البيانات', 'error');
+                    showAlert('Error fetching data', 'error');
                 }
             } catch (error) {
-                showAlert('خطأ في الاتصال بالخادم', 'error');
+                showAlert('Error connecting to server', 'error');
                 console.error(error);
             } finally {
                 loading.style.display = 'none';
@@ -242,7 +242,7 @@
                 rejectionsList.innerHTML = `
                     <div class="empty-state">
                         <div class="empty-state-icon">📭</div>
-                        <p>لا توجد تسجيلات</p>
+                        <p>No reports found</p>
                     </div>
                 `;
                 return;
@@ -253,54 +253,54 @@
                     <div class="rejection-header">
                         <div>
                             <span class="rejection-id">#${rejection.id}</span>
-                            <span style="color: #666; margin-right: 10px;">${rejection.materialName}</span>
+                            <span style="color: #666; margin-left: 10px;">${rejection.materialName}</span>
                         </div>
-                        <button class="btn btn-delete" onclick="deleteRejection(${rejection.id})">حذف</button>
+                        <button class="btn btn-delete" onclick="deleteRejection(${rejection.id})">Delete</button>
                     </div>
                     <div class="rejection-body">
                         <div class="info-row">
                             <div class="info-item">
-                                <div class="info-label">نوع المادة</div>
-                                <div class="info-value">${rejection.materialType}</div>
+                                <div class="info-label">Material Type</div>
+                                <div class="info-value">${rejection.materialType === 'RAW' ? 'Raw Material' : 'Packing Material'}</div>
                             </div>
                             <div class="info-item">
-                                <div class="info-label">اسم المورد</div>
+                                <div class="info-label">Supplier</div>
                                 <div class="info-value">${rejection.supplierName}</div>
                             </div>
                             <div class="info-item">
-                                <div class="info-label">فئة العيب</div>
+                                <div class="info-label">Defect Category</div>
                                 <div class="info-value">${rejection.defectCategory}</div>
                             </div>
                         </div>
                         <div class="info-row">
                             <div class="info-item">
-                                <div class="info-label">وصف العيب</div>
+                                <div class="info-label">Defect Description</div>
                                 <div class="info-value">${rejection.defectDescription}</div>
                             </div>
                         </div>
                         <div class="info-row">
                             <div class="info-item">
-                                <div class="info-label">الكمية المرفوضة</div>
+                                <div class="info-label">Quantity Rejected</div>
                                 <div class="info-value">${rejection.quantityRejected}</div>
                             </div>
                             <div class="info-item">
-                                <div class="info-label">الوردية</div>
-                                <div class="info-value">${rejection.shift}</div>
+                                <div class="info-label">Shift</div>
+                                <div class="info-value">${rejection.shift === 'A' ? 'Day (A)' : rejection.shift === 'B' ? 'Night (B)' : rejection.shift}</div>
                             </div>
                             <div class="info-item">
-                                <div class="info-label">منطقة العملية</div>
+                                <div class="info-label">Process Area</div>
                                 <div class="info-value">${rejection.processArea}</div>
                             </div>
                         </div>
                         ${rejection.images && rejection.images.length > 0 ? `
                             <div class="images">
                                 ${rejection.images.map(img => `
-                                    <img src="/uploads/${img}" alt="صورة" class="image-thumb" onclick="viewImage('/uploads/${img}')">
+                                    <img src="/uploads/${img}" alt="Defect image" class="image-thumb" onclick="viewImage('/uploads/${img}')">
                                 `).join('')}
                             </div>
                         ` : ''}
                         <div class="timestamp">
-                            📅 ${new Date(rejection.createdAt).toLocaleString('ar-SA')}
+                            📅 ${new Date(rejection.createdAt).toLocaleString('en-US')}
                         </div>
                     </div>
                 </div>
@@ -308,7 +308,7 @@
         }
 
         async function deleteRejection(id) {
-            if (!confirm('هل تريد فعلاً حذف هذا التسجيل؟')) return;
+            if (!confirm('Are you sure you want to delete this report?')) return;
 
             try {
                 const response = await fetch(`/api/rejections/${id}`, {
@@ -317,13 +317,13 @@
                 const result = await response.json();
 
                 if (result.success) {
-                    showAlert('✔️ تم حذف التسجيل بنجاح', 'success');
+                    showAlert('✔️ Report deleted successfully', 'success');
                     loadRejections();
                 } else {
-                    showAlert('❌ ' + result.message, 'error');
+                    showAlert('❌ ' + (result.message || 'Error deleting report'), 'error');
                 }
             } catch (error) {
-                showAlert('❌ خطأ في الاتصال بالخادم', 'error');
+                showAlert('❌ Error connecting to server', 'error');
             }
         }
 

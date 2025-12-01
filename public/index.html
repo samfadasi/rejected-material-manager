@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>نظام تسجيل المواد المرفوضة</title>
+    <title>New Rejected Material Report</title>
     <style>
         * {
             margin: 0;
@@ -28,13 +28,13 @@
             width: 100%;
         }
         h1 {
-            text-align: center;
+            text-align: left;
             color: #333;
             margin-bottom: 10px;
             font-size: 24px;
         }
         .subtitle {
-            text-align: center;
+            text-align: left;
             color: #666;
             margin-bottom: 30px;
             font-size: 14px;
@@ -168,74 +168,65 @@
 </head>
 <body>
     <div class="container">
-        <h1>📦 نظام تسجيل المواد المرفوضة</h1>
-        <p class="subtitle">تسجيل جديد للمواد المرفوضة</p>
+        <h1>📦 New Rejected Material Report</h1>
+        <p class="subtitle">Submit a new rejection report</p>
 
         <form id="rejectionForm">
             <div class="form-group">
-                <label for="materialType">نوع المادة *</label>
-                <select id="materialType" name="materialType" required>
-                    <option value="">اختر نوع المادة</option>
-                    <option value="خام">خام</option>
-                    <option value="نصف مصنع">نصف مصنع</option>
-                    <option value="مصنع">مصنع</option>
-                    <option value="مكونات">مكونات</option>
+                <label for="materialType">Material Type *</label>
+                <select id="materialType" name="materialType" onchange="updateDefects()" required>
+                    <option value="">Select Material Type</option>
+                    <option value="RAW">Raw Material</option>
+                    <option value="PACKING">Packing Material</option>
                 </select>
             </div>
 
             <div class="form-group">
-                <label for="materialName">اسم المادة *</label>
-                <input type="text" id="materialName" name="materialName" required placeholder="مثال: الفولاذ الصحي">
+                <label for="materialName">Material Name *</label>
+                <input type="text" id="materialName" name="materialName" required placeholder="Example: Stainless Steel">
             </div>
 
             <div class="form-group">
-                <label for="supplierName">اسم المورد *</label>
-                <input type="text" id="supplierName" name="supplierName" required placeholder="مثال: شركة النقاء">
+                <label for="supplierName">Supplier Name *</label>
+                <input type="text" id="supplierName" name="supplierName" required placeholder="Example: ABC Supplier">
             </div>
 
             <div class="form-group">
-                <label for="defectCategory">فئة العيب *</label>
+                <label for="defectCategory">Defect Category *</label>
                 <select id="defectCategory" name="defectCategory" required>
-                    <option value="">اختر فئة العيب</option>
-                    <option value="تشويه">تشويه</option>
-                    <option value="صدأ">صدأ</option>
-                    <option value="كسر">كسر</option>
-                    <option value="خدوش">خدوش</option>
-                    <option value="أبعاد خاطئة">أبعاد خاطئة</option>
-                    <option value="تلون">تلون</option>
+                    <option value="">Select Defect Category</option>
                 </select>
             </div>
 
             <div class="form-group">
-                <label for="defectDescription">وصف العيب *</label>
-                <textarea id="defectDescription" name="defectDescription" required placeholder="صف العيب بالتفصيل"></textarea>
+                <label for="defectDescription">Defect Description *</label>
+                <textarea id="defectDescription" name="defectDescription" required placeholder="Describe the defect in detail"></textarea>
             </div>
 
             <div class="form-group">
-                <label for="quantityRejected">الكمية المرفوضة *</label>
+                <label for="quantityRejected">Quantity Rejected *</label>
                 <input type="number" id="quantityRejected" name="quantityRejected" min="1" required placeholder="0">
             </div>
 
             <div class="form-group">
-                <label for="shift">الوردية *</label>
+                <label for="shift">Shift *</label>
                 <select id="shift" name="shift" required>
-                    <option value="">اختر الوردية</option>
-                    <option value="صباح">صباح</option>
-                    <option value="عصر">عصر</option>
-                    <option value="ليل">ليل</option>
+                    <option value="">Select Shift</option>
+                    <option value="A">Day Shift (A)</option>
+                    <option value="B">Night Shift (B)</option>
                 </select>
             </div>
 
             <div class="form-group">
-                <label for="processArea">منطقة العملية *</label>
-                <input type="text" id="processArea" name="processArea" required placeholder="مثال: قسم الصب">
+                <label for="processArea">Process Area *</label>
+                <input type="text" id="processArea" name="processArea" required placeholder="Example: Casting Department">
             </div>
 
             <div class="form-group">
-                <label>رفع الصور (1-10 صور)</label>
+                <label>Defect Images (1-10 images)</label>
                 <div class="file-input-wrapper">
                     <label for="images" class="file-label" id="fileLabel">
-                        📸 اضغط هنا لاختيار الصور أو اسحب الملفات هنا
+                        📸 Click to select images or drag and drop files here
                     </label>
                     <input type="file" id="images" name="images" accept="image/*" multiple>
                 </div>
@@ -244,12 +235,12 @@
 
             <div class="loading" id="loading">
                 <div class="spinner"></div>
-                <p>جاري التسجيل...</p>
+                <p>Submitting...</p>
             </div>
 
             <div class="button-group">
-                <button type="submit" class="btn-submit">✔️ تسجيل الرفض</button>
-                <button type="button" class="btn-list" onclick="goToList()">📋 عرض القائمة</button>
+                <button type="submit" class="btn-submit">✔️ Submit Rejection</button>
+                <button type="button" class="btn-list" onclick="goToList()">📋 View Reports</button>
             </div>
 
             <div class="alert" id="alert"></div>
@@ -257,6 +248,27 @@
     </div>
 
     <script>
+        const defectOptions = {
+            RAW: [
+                'Foreign body',
+                'Off odour / taste',
+                'Wrong specification',
+                'Microbiological issue',
+                'Moisture out of spec',
+                'Color defect',
+                'Physical contamination'
+            ],
+            PACKING: [
+                'Print defect',
+                'Seal leak',
+                'Pinholes',
+                'Wrong artwork / text',
+                'Incorrect barcode',
+                'Delamination',
+                'Dimension out of spec'
+            ]
+        };
+
         const form = document.getElementById('rejectionForm');
         const imagesInput = document.getElementById('images');
         const fileLabel = document.getElementById('fileLabel');
@@ -269,11 +281,24 @@
         fileLabel.addEventListener('dragleave', handleDragLeave);
         fileLabel.addEventListener('drop', handleDrop);
 
+        function updateDefects() {
+            const type = document.getElementById('materialType').value;
+            const defectSelect = document.getElementById('defectCategory');
+            defectSelect.innerHTML = '<option value="">Select Defect Category</option>';
+            const list = defectOptions[type] || [];
+            list.forEach(d => {
+                const opt = document.createElement('option');
+                opt.value = d;
+                opt.textContent = d;
+                defectSelect.appendChild(opt);
+            });
+        }
+
         function updateFileCount() {
             const count = imagesInput.files.length;
             if (count > 0) {
                 fileLabel.classList.add('has-files');
-                fileCount.textContent = `✔️ تم تحديد ${count} صورة`;
+                fileCount.textContent = `✔️ ${count} image${count !== 1 ? 's' : ''} selected`;
             } else {
                 fileLabel.classList.remove('has-files');
                 fileCount.textContent = '';
@@ -313,17 +338,18 @@
                 const result = await response.json();
 
                 if (result.success) {
-                    showAlert('✔️ ' + result.message, 'success');
+                    showAlert('✔️ Rejection submitted successfully', 'success');
                     form.reset();
+                    updateDefects();
                     updateFileCount();
                     setTimeout(() => {
                         form.reset();
                     }, 2000);
                 } else {
-                    showAlert('❌ ' + result.message, 'error');
+                    showAlert('❌ ' + (result.message || 'An error occurred'), 'error');
                 }
             } catch (error) {
-                showAlert('❌ خطأ في الاتصال بالخادم', 'error');
+                showAlert('❌ Error connecting to server', 'error');
                 console.error(error);
             } finally {
                 loading.style.display = 'none';
@@ -339,6 +365,8 @@
         function goToList() {
             window.location.href = '/list';
         }
+
+        document.addEventListener('DOMContentLoaded', updateDefects);
     </script>
 </body>
 </html>

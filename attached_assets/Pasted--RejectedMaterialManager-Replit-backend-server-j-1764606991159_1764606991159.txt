@@ -1,0 +1,196 @@
+أعمل الآن على مشروع اسمه RejectedMaterialManager في Replit، والمشروع يحتوي على:
+
+backend في server.js مع المسارات داخل routes/rejectionsRoutes.js
+
+الموديل الأساسي في models/rejection.js
+
+الواجهة الأمامية (HTML) داخل public/index.html و public/list.html
+
+أريدك أن تقوم بعمل refactor وتعديلات واضحة على المشروع كما يلي، مع الحفاظ على عمل الـ API بدون كسر أي endpoint:
+
+1) تحويل الواجهة بالكامل للغة الإنجليزية
+
+في ملف public/index.html:
+
+غيّر جميع العناوين والتسميات من العربية إلى الإنجليزية.
+
+اجعل عنوان الصفحة مثلاً: New Rejected Material Report.
+
+اجعل أسماء الحقول كالآتي (labels والنصوص المعروضة للمستخدم):
+
+Material Type
+
+Material Name
+
+Supplier Name
+
+Shift
+
+Process Area
+
+Defect Category
+
+Defect Description
+
+Quantity Rejected
+
+Defect Images
+
+زر الإرسال: Submit Rejection
+
+في ملف public/list.html:
+
+عدّل عنوان الصفحة إلى: Rejected Material Reports.
+
+عدّل عناوين أعمدة الجدول إلى الإنجليزية كما يلي:
+
+ID
+
+Material Type
+
+Material Name
+
+Supplier
+
+Defect Category
+
+Defect Description
+
+Quantity Rejected
+
+Shift
+
+Process Area
+
+Images
+
+Created At
+
+تأكد أن أي نص عربي في هذه الملفات يتحوّل لإنجليزي بنصوص واضحة ومهنية.
+
+2) تعديل الورديات لتكون فقط A و B (Day / Night)
+
+في نموذج الإدخال داخل public/index.html:
+
+اجعل حقل الـ Shift عبارة عن select يحتوي فقط على خيارين:
+
+القيمة A مع النص المعروض: Day Shift (A)
+
+القيمة B مع النص المعروض: Night Shift (B)
+
+في موديل الرفض models/rejection.js:
+
+حدّث حقل shift بحيث يكون:
+
+shift: {
+  type: String,
+  enum: ['A', 'B'],
+  default: 'A'
+}
+
+
+إذا كان هناك أي validation أو منطق آخر يعتمد على أسماء ورديات بالعربي (صباحي / مسائي / ليلي)، قم بتحويله ليستخدم فقط A و B.
+
+3) تعديل أنواع المواد (Material Type) إلى RAW و PACKING فقط
+
+في نموذج الإدخال في public/index.html:
+
+اجعل حقل نوع المادة Material Type كالتالي:
+
+<select id="materialType" name="materialType" onchange="updateDefects()">
+  <option value="RAW">Raw Material</option>
+  <option value="PACKING">Packing Material</option>
+</select>
+
+
+في models/rejection.js:
+
+عدّل حقل materialType ليصبح:
+
+materialType: {
+  type: String,
+  enum: ['RAW', 'PACKING'],
+  required: true
+}
+
+
+تأكد من أن أي مكان في الكود (controllers أو routes) كان يستخدم أنواع أخرى (مثل خام/مصنع/نصف مصنع) يتم تحديثه ليستخدم فقط RAW و PACKING.
+
+4) ربط كل نوع مادة بقائمة عيوب مختلفة (Defect Category)
+
+أريد أن يكون هناك drop-down للـ Defect Category يتغيّر تلقائياً حسب نوع المادة:
+
+إذا كان materialType = RAW → قائمة عيوب خاصة بالمواد الخام
+
+إذا كان materialType = PACKING → قائمة عيوب خاصة بمواد التعبئة والتغليف
+
+في public/index.html:
+
+تأكد أن حقل Defect Category عبارة عن:
+
+<select id="defectCategory" name="defectCategory"></select>
+
+
+في أسفل الملف (قبل إغلاق </body>)، أضف أو عدّل سكربت JavaScript ليحتوي على مصفوفات عيوب لكل نوع، مثلاً (يمكنك استخدام هذه القيم كافتراضية):
+
+const defectOptions = {
+  RAW: [
+    'Foreign body',
+    'Off odour / taste',
+    'Wrong specification',
+    'Microbiological issue',
+    'Moisture out of spec',
+    'Color defect',
+    'Physical contamination'
+  ],
+  PACKING: [
+    'Print defect',
+    'Seal leak',
+    'Pinholes',
+    'Wrong artwork / text',
+    'Incorrect barcode',
+    'Delamination',
+    'Dimension out of spec'
+  ]
+};
+
+function updateDefects() {
+  const type = document.getElementById('materialType').value;
+  const defectSelect = document.getElementById('defectCategory');
+  defectSelect.innerHTML = '';
+  const list = defectOptions[type] || [];
+  list.forEach(d => {
+    const opt = document.createElement('option');
+    opt.value = d;
+    opt.textContent = d;
+    defectSelect.appendChild(opt);
+  });
+}
+
+document.addEventListener('DOMContentLoaded', updateDefects);
+
+
+تأكد أن onchange="updateDefects()" مضاف في الـ <select> الخاص بـ materialType، وأنه عند تحميل الصفحة لأول مرة يتم استدعاء updateDefects() لتعبئة القائمة.
+
+لا تغيّر أي شيء في الـ API endpoints نفسها (/api/rejections/create، إلخ)، فقط تأكد أن الكود في الـ controller يستقبل الحقول:
+
+materialType
+
+defectCategory
+
+shift
+بشكل صحيح ويخزنها كما هي.
+
+5) التحقق النهائي
+
+بعد التعديلات:
+
+تأكد أن:
+
+صفحة الإدخال / تعمل وتعرض النصوص بالإنجليزي، والـ shift بها فقط (A/B)، وأن تغيير Material Type يغيّر قائمة Defect Category.
+
+صفحة /list تعرض البيانات بالإنجليزي مع الحقول المذكورة أعلاه.
+
+تأكد من عدم وجود أخطاء في الـ console عند تشغيل node server.js أو عند إرسال نموذج جديد.
+
+الرجاء تنفيذ كل التعديلات مباشرة في الملفات المناسبة داخل هذا المشروع وعدم الاكتفاء بالشرح، مع إصلاح أي أخطاء تظهر بعد التعديل.
