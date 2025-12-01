@@ -6,7 +6,20 @@ class RejectionModel {
   static createRejection(data, imageFiles = []) {
     const rejection = {
       id: idCounter++,
-      ...data,
+      materialType: data.materialType,
+      materialName: data.materialName,
+      supplierName: data.supplierName,
+      defectCategory: data.defectCategory,
+      defectDescription: data.defectDescription,
+      quantityRejected: data.quantityRejected,
+      processArea: data.processArea,
+      shiftCode: data.shiftCode,
+      shiftTime: data.shiftTime,
+      inspectorName: data.inspectorName,
+      inspectorEmployeeId: data.inspectorEmployeeId,
+      enteredByUser: data.enteredByUser || null,
+      enteredByName: data.enteredByName || null,
+      enteredByEmployeeId: data.enteredByEmployeeId || null,
       images: imageFiles || [],
       createdAt: new Date().toISOString()
     };

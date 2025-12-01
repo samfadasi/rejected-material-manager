@@ -11,10 +11,14 @@ exports.createRejection = (req, res) => {
       quantityRejected,
       shiftCode,
       shiftTime,
-      processArea
+      processArea,
+      inspectorName,
+      inspectorEmployeeId
     } = req.body;
 
     const imageFiles = req.files ? req.files.map(f => f.filename) : [];
+
+    const userInfo = req.user || {};
 
     const rejection = RejectionModel.createRejection(
       {
@@ -26,7 +30,12 @@ exports.createRejection = (req, res) => {
         quantityRejected,
         shiftCode,
         shiftTime,
-        processArea
+        processArea,
+        inspectorName,
+        inspectorEmployeeId,
+        enteredByUser: userInfo.id || null,
+        enteredByName: userInfo.name || null,
+        enteredByEmployeeId: userInfo.employeeId || null
       },
       imageFiles
     );

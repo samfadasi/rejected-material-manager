@@ -1,0 +1,242 @@
+نحن الآن نعمل على مشروع RejectedMaterialManager في Replit، والمشروع يحتوي على:
+- backend في server.js + routes/rejectionsRoutes.js + controllers/rejectionsController.js
+- الموديل الأساسي في models/rejection.js
+- موديل المستخدم في models/User.js (فيه name, email, passwordHash, role وربما employeeId)
+- الواجهة الأمامية في public/index.html (فورم الإضافة) و public/list.html (عرض القائمة)
+
+أريد إضافة ميزة تتبع "من قام بالرفض" و"من قام بالإدخال" كما يلي:
+
+====================================
+أولاً: توحيد معلومات الموظف (User) مع رقم وظيفي
+====================================
+
+1) في models/User.js:
+   - تأكد أن الموديل يحتوي على حقل employeeId (رقم الموظف). إذا غير موجود، أضفه:
+     ```js
+     employeeId: {
+       type: String,
+       required: true
+     }
+     ```
+   - عدّل أي seed-admin أو user creation موجود بحيث يمرر قيمة employeeId (مثلاً "EMP-0001" للأدمن المؤقت).
+
+2) في عملية تسجيل الدخول (login controller) وفي إنشاء الـ JWT:
+   - عندما تنشئ التوكن، تأكد أن الـ payload يحتوي على:
+     - userId
+     - name
+     - employeeId
+     - role
+   مثال:
+   ```js
+   const tokenPayload = {
+     id: user._id,
+     name: user.name,
+     employeeId: user.employeeId,
+     role: user.role
+   };
+ثم توليد التوكن بنفس secret الحالي.
+
+في middleware الخاص بالتوثيق (auth middleware):
+
+بعد فك التوكن، تأكد أنك تضيف إلى req.user كائن فيه:
+
+js
+Copy code
+req.user = {
+  id: decoded.id,
+  name: decoded.name,
+  employeeId: decoded.employeeId,
+  role: decoded.role
+};
+استخدم هذا الشكل في كل مكان بدل أي شكل قديم.
+
+====================================
+ثانياً: تعديل موديل الرفض لتخزين من رفض ومن أدخل
+في models/rejection.js، عدّل الـ schema ليشمل الحقول الجديدة التالية:
+
+js
+Copy code
+inspectorName: {
+  type: String,
+  required: true
+},
+inspectorEmployeeId: {
+  type: String,
+  required: true
+},
+
+enteredByUser: {
+  type: mongoose.Schema.Types.ObjectId,
+  ref: 'User'
+},
+enteredByName: {
+  type: String
+},
+enteredByEmployeeId: {
+  type: String
+},
+inspectorName + inspectorEmployeeId = الشخص الذي قام برفض المادة فعلياً في أرض الواقع (المفتش).
+
+enteredByUser + enteredByName + enteredByEmployeeId = الشخص الذي قام بإدخال التقرير في النظام (المستخدم الذي عمل login).
+
+إذا كان هناك حقل قديم اسمه createdBy أو مشابه، يمكنك إما:
+
+إعادة استخدامه كـ enteredByUser
+أو
+
+الإبقاء عليه لكن تأكد من تعبئة الحقول الجديدة أيضاً.
+
+====================================
+ثالثاً: منطق إنشاء الرفض في الـ Controller
+في controller الذي يتعامل مع POST /api/rejections/create (داخل controllers/rejectionsController.js غالباً):
+
+تأكد أن الـ body يستقبل الحقول الجديدة القادمة من الفورم:
+
+js
+Copy code
+const {
+  materialType,
+  materialName,
+  supplierName,
+  defectCategory,
+  defectDescription,
+  quantityRejected,
+  processArea,
+  shiftCode,
+  shiftTime,
+  inspectorName,
+  inspectorEmployeeId
+  // أي حقول أخرى موجودة مسبقاً...
+} = req.body;
+استخدم بيانات المستخدم الحالي من req.user لتعبئة enteredBy*:
+
+js
+Copy code
+const userInfo = req.user; // من auth middleware
+
+const rejection = await Rejection.create({
+  materialType,
+  materialName,
+  supplierName,
+  defectCategory,
+  defectDescription,
+  quantityRejected: quantityRejected ? Number(quantityRejected) : null,
+  processArea,
+  shiftCode,
+  shiftTime,
+  inspectorName,
+  inspectorEmployeeId,
+  enteredByUser: userInfo ? userInfo.id : null,
+  enteredByName: userInfo ? userInfo.name : null,
+  enteredByEmployeeId: userInfo ? userInfo.employeeId : null,
+  // وباقي الحقول الموجودة سابقاً مثل الصور، timestamps، إلخ
+});
+تأكد أن الـ route الخاص بإنشاء الرفض محمي بـ auth middleware حتى تكون req.user متاحة (مثلاً:
+
+js
+Copy code
+router.post('/create', authMiddleware, upload.array('images', 10), createRejection);
+```)
+====================================
+رابعاً: تعديل الـ Frontend (صفحة الإدخال)
+في ملف public/index.html:
+
+أضف حقلي الإدخال التاليين داخل الفورم (لـ inspector):
+
+html
+Copy code
+<div>
+  <label>Inspector Name</label><br />
+  <input name="inspectorName" required />
+</div>
+
+<div>
+  <label>Inspector Employee ID</label><br />
+  <input name="inspectorEmployeeId" required />
+</div>
+لا تضف حقول للـ enteredByName أو enteredByEmployeeId في الـ form.
+
+هذه الحقول يجب أن تُملأ تلقائياً في الباك إند من req.user كما تم شرحه.
+
+لا تطلب من المستخدم كتابتها يدوياً.
+
+====================================
+خامساً: تعديل صفحة القائمة لعرض هذه البيانات
+في ملف public/list.html:
+
+أضف أعمدة جديدة في رأس الجدول:
+
+html
+Copy code
+<th>Inspector Name</th>
+<th>Inspector Employee ID</th>
+<th>Entered By</th>
+<th>Entered By Employee ID</th>
+في الصف الخاص بكل عنصر (عند بناء rows من الـ JSON)، تأكد من عرض القيم:
+
+html
+Copy code
+<td>${item.inspectorName || ''}</td>
+<td>${item.inspectorEmployeeId || ''}</td>
+<td>${item.enteredByName || ''}</td>
+<td>${item.enteredByEmployeeId || ''}</td>
+====================================
+سادساً: التحقق النهائي
+بعد التعديل:
+
+عند تسجيل الدخول بحساب مستخدم (فيه name + employeeId) ثم إرسال نموذج رفض جديد:
+
+المستخدم يختار:
+
+Inspector Name
+
+Inspector Employee ID
+
+النظام يجب أن يخزن أيضاً:
+
+enteredByUser = user._id
+
+enteredByName = user.name
+
+enteredByEmployeeId = user.employeeId
+تلقائياً من الـ JWT / req.user بدون أي حقل إضافي في الفورم.
+
+صفحة list يجب أن تعرض:
+
+من قام بالرفض (الاسم + الرقم الوظيفي)
+
+من قام بالإدخال (الاسم + الرقم الوظيفي) من حساب الدخول.
+
+رجاءً عدّل جميع الملفات ذات الصلة (models/User.js, models/rejection.js, middleware/auth, controllers/rejectionsController.js, routes/rejectionsRoutes.js, public/index.html, public/list.html) بحيث يعمل النظام بدون أخطاء، مع استمرار عمل المزايا الحالية.
+
+markdown
+Copy code
+
+---
+
+## بعد ما تشغّل البرومبت
+
+1. اضغط **Run** في Replit.  
+2. جرّب السيناريو ده:
+
+- ادخل بحسابك (مثلاً Samir, EmployeeId = `EMP-0123`).  
+- افتح صفحة إضافة رفض.  
+- عبّي:
+  - Inspector Name = أي شخص في الخط  
+  - Inspector Employee ID = رقمو  
+  - باقي الحقول  
+- Submit.
+
+3. افتح صفحة **list**:
+   - تأكد إنك شايف:
+     - Inspector Name / ID  
+     - Entered By / Entered By Employee ID = بيانات حسابك أنت.
+
+لو حصلت أي غلطة (Error في console أو قيمة ما ظهرت)، انسخ رسالة الخطأ أو صورة من الجدول وأنا أقول لك بالضبط نصلّح شنو، لكن البرومبت ده مفروض يغطي المطلوب بالكامل.
+::contentReference[oaicite:0]{index=0}
+
+
+
+
+
+

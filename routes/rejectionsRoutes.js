@@ -5,6 +5,8 @@ const path = require('path');
 const fs = require('fs');
 const rejectionsController = require('../controllers/rejectionsController');
 const RejectionModel = require('../models/rejection');
+const { optionalAuthMiddleware } = require('../middleware/auth');
+const User = require('../models/User');
 
 const uploadsDir = path.join(__dirname, '../uploads');
 if (!fs.existsSync(uploadsDir)) {
@@ -35,17 +37,39 @@ const upload = multer({
   }
 });
 
-router.post('/create', upload.array('images', 10), rejectionsController.createRejection);
+router.post('/create', optionalAuthMiddleware, upload.array('images', 10), rejectionsController.createRejection);
 router.get('/', rejectionsController.getAllRejections);
 router.get('/:id', rejectionsController.getRejection);
 router.delete('/:id', rejectionsController.deleteRejection);
 
 router.get('/auth/seed-admin', (req, res) => {
-  const admin = RejectionModel.seedAdmin();
+  const admin = User.seedAdmin();
   res.status(200).json({
     success: true,
-    message: 'تم إنشاء حساب المسؤول',
+    message: 'Admin user created successfully',
     data: admin
+  });
+});
+
+router.get('/auth/seed-user', (req, res) => {
+  const user = User.create({
+    name: 'John Doe',
+    email: 'john@rejected-material.local',
+    employeeId: 'EMP-0002',
+    role: 'user'
+  });
+  res.status(200).json({
+    success: true,
+    message: 'Test user created successfully',
+    data: user
+  });
+});
+
+router.get('/users/all', (req, res) => {
+  const allUsers = User.getAll();
+  res.status(200).json({
+    success: true,
+    data: allUsers
   });
 });
 
