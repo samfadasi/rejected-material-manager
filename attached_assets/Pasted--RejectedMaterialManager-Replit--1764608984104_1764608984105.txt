@@ -1,0 +1,170 @@
+نحن نعمل على مشروع RejectedMaterialManager في Replit.
+
+الآن أريد إضافة توثيق واضح لتاريخ ووقت حدوث الرفض الفعلي (في أرض الواقع) وليس فقط وقت الإدخال في النظام.
+
+المطلوب منك عمل تعديلات كاملة في الـ backend والـ frontend كما يلي، بالتعديل المباشر لملفات المشروع:
+
+====================================
+1) تعديل موديل الرفض models/rejection.js
+====================================
+
+أضف حقل جديد في الـ schema لتخزين تاريخ ووقت الرفض الفعلي. ليكن اسمه مثلاً:
+
+```js
+rejectionDateTime: {
+  type: Date,
+  required: true
+}
+لا تحذف createdAt أو timestamps الموجودة، هذه تخص وقت الإدخال في النظام.
+
+rejectionDateTime يجب أن يمثل التاريخ والوقت الفعليين لحدوث الرفض في موقع الإنتاج.
+
+====================================
+2) تعديل الـ Controller المسؤول عن إنشاء الرفض
+في controller الخاص بمسار POST لإنشاء رفض جديد (مثلاً createRejection في controllers/rejectionsController.js):
+
+استقبل قيمة جديدة من الـ body:
+
+js
+Copy code
+const {
+  materialType,
+  materialName,
+  supplierName,
+  defectCategory,
+  defectDescription,
+  quantityRejected,
+  processArea,
+  shiftCode,
+  shiftTime,
+  inspectorName,
+  inspectorEmployeeId,
+  rejectionDateTime
+  // ... أي حقول أخرى موجودة
+} = req.body;
+عند إنشاء الـ Rejection، خزّن هذا الحقل داخل المستند:
+
+js
+Copy code
+const rejection = await Rejection.create({
+  materialType,
+  materialName,
+  supplierName,
+  defectCategory,
+  defectDescription,
+  quantityRejected: quantityRejected ? Number(quantityRejected) : null,
+  processArea,
+  shiftCode,
+  shiftTime,
+  inspectorName,
+  inspectorEmployeeId,
+  rejectionDateTime: rejectionDateTime ? new Date(rejectionDateTime) : new Date(),
+  enteredByUser: userInfo ? userInfo.id : null,
+  enteredByName: userInfo ? userInfo.name : null,
+  enteredByEmployeeId: userInfo ? userInfo.employeeId : null,
+  // أي حقول أخرى مثل الصور .. إلخ
+});
+الفكرة: إذا لم تُرسل قيمة من الفورم لأي سبب، استعمل new Date() كقيمة افتراضية، لكن في الحالة الطبيعية نريد القيمة القادمة من الفورم.
+
+====================================
+3) تعديل صفحة الإدخال public/index.html
+أضف حقل إدخال جديد في الفورم ليمكِّن المفتش من اختيار تاريخ ووقت الرفض الفعلي.
+
+حقل واحد من نوع datetime-local مثلاً:
+
+html
+Copy code
+<div>
+  <label>Rejection Date & Time</label><br />
+  <input
+    type="datetime-local"
+    name="rejectionDateTime"
+    id="rejectionDateTime"
+    required
+  />
+</div>
+وفي نهاية الملف (داخل سكربت JavaScript أو بعده)، أضف كود بسيط يملأ القيمة الافتراضية بالوقت الحالي حتى لا يضطر المستخدم لتعديلها إلا إذا أراد:
+
+js
+Copy code
+document.addEventListener('DOMContentLoaded', () => {
+  const dtInput = document.getElementById('rejectionDateTime');
+  if (dtInput && !dtInput.value) {
+    const now = new Date();
+    const pad = n => n.toString().padStart(2, '0');
+    const year = now.getFullYear();
+    const month = pad(now.getMonth() + 1);
+    const day = pad(now.getDate());
+    const hour = pad(now.getHours());
+    const minute = pad(now.getMinutes());
+    dtInput.value = `${year}-${month}-${day}T${hour}:${minute}`;
+  }
+});
+بهذا الشكل:
+
+إذا المفتش ما عدّل التاريخ/الوقت → يتسجل وقت الإدخال الحالي.
+
+إذا عدّله ليعكس وقت حدوث الرفض الفعلي → نخزّنه كما هو.
+
+====================================
+4) تعديل صفحة القائمة public/list.html
+في جدول عرض التقارير:
+
+أضف عمود جديد في رأس الجدول:
+
+html
+Copy code
+<th>Rejection Date & Time</th>
+عند بناء الصفوف من الـ JSON (داخل حلقة عرض العناصر)، أضف خلية جديدة تقرأ من الحقل الجديد:
+
+html
+Copy code
+<td>${item.rejectionDateTime ? new Date(item.rejectionDateTime).toLocaleString() : ''}</td>
+تأكد أن هذا العمود يوضع في مكان منطقي (مثلاً بعد Created At أو قبله حسب تصميمك الحالي).
+
+====================================
+5) التحقق النهائي
+بعد هذه التعديلات:
+
+عند فتح صفحة الإدخال:
+
+يجب أن يظهر حقل "Rejection Date & Time" مع قيمة افتراضية لوقت الآن (يمكن تعديلها).
+
+عند تسجيل رفض جديد:
+
+يتم إرسال rejectionDateTime مع الـ form وتخزينه في قاعدة البيانات.
+
+في صفحة list:
+
+يجب أن يظهر عمود "Rejection Date & Time" بقيمة مفهومة (toLocaleString) لكل رفض.
+
+تأكد من أن النظام يعمل بدون أخطاء في الـ console عند التشغيل أو عند إرسال الفورم.
+
+رجاءً عدّل جميع الملفات ذات الصلة (models/rejection.js, controllers/rejectionsController.js, public/index.html, public/list.html) مباشرة بحيث يكون النظام يعمل بالكامل مع حقل rejectionDateTime الجديد.
+
+markdown
+Copy code
+
+---
+
+## بعد ما تشغّل البرومبت
+
+1. **Run** من Replit.  
+2. افتح صفحة الإدخال:
+   - تأكد ظهر حقل **Rejection Date & Time**  
+   - بيكون جاهز بتاريخ/وقت الآن تلقائياً.
+3. جرّب:
+   - خليه زي ما هو في مرة.  
+   - وفي مرة تانية عدّلو لوقت سابق (مثلاً أمس الساعة 10 الصباح).
+4. افتح صفحة **list**:
+   - تأكد في عمود **Rejection Date & Time**  
+   - شايل نفس التاريخ/الوقت اللي اخترتو.
+
+لو أي حاجة ما ظهرت أو طلعت رسالة خطأ في الـ console، انسخ الرسالة زي ما هي وأنا أقولك تعدّل شنو بالضبط.
+::contentReference[oaicite:0]{index=0}
+
+
+
+
+
+

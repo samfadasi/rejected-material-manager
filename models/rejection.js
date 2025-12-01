@@ -17,6 +17,7 @@ class RejectionModel {
       shiftTime: data.shiftTime,
       inspectorName: data.inspectorName,
       inspectorEmployeeId: data.inspectorEmployeeId,
+      rejectionDateTime: data.rejectionDateTime ? new Date(data.rejectionDateTime).toISOString() : new Date().toISOString(),
       enteredByUser: data.enteredByUser || null,
       enteredByName: data.enteredByName || null,
       enteredByEmployeeId: data.enteredByEmployeeId || null,
