@@ -1,0 +1,218 @@
+We already have core auth and export logic implemented in the backend for the RejectedMaterialManager project (login, JWT, /api/rejections/summary, /api/rejections/export/excel). 
+
+Now I need you to complete the remaining **frontend updates** so the app is fully usable by the quality team:
+
+========================================
+1) Use JWT from localStorage in all frontend calls
+========================================
+
+Assume that after login, the JWT token is stored in:
+- localStorage under the key: "token"
+
+Please:
+
+1) In `public/index.html`:
+   - If the form is using a `fetch` call to submit to `/api/rejections/create`, make sure the Authorization header is added:
+     ```js
+     const token = localStorage.getItem('token');
+     fetch('/api/rejections/create', {
+       method: 'POST',
+       headers: {
+         'Authorization': token ? 'Bearer ' + token : ''
+         // plus any other headers like 'Accept' if needed
+       },
+       body: formData
+     });
+     ```
+   - If the form is still using a plain HTML `<form action="...">` without fetch, convert it to a JavaScript submit handler using `fetch` so we can attach the Authorization header. For example:
+     ```html
+     <form id="rejectionForm" enctype="multipart/form-data">
+       ...
+     </form>
+     <script>
+       const form = document.getElementById('rejectionForm');
+       form.addEventListener('submit', async (e) => {
+         e.preventDefault();
+         const formData = new FormData(form);
+         const token = localStorage.getItem('token');
+         const res = await fetch('/api/rejections/create', {
+           method: 'POST',
+           headers: {
+             'Authorization': token ? 'Bearer ' + token : ''
+           },
+           body: formData
+         });
+         if (res.ok) {
+           alert('Rejection submitted successfully');
+           window.location.href = '/list.html';
+         } else {
+           alert('Error submitting rejection');
+         }
+       });
+     </script>
+     ```
+
+2) In `public/list.html`:
+   - Wherever we call the API to get the list of rejections (for example `/api/rejections`), make sure we add the same Authorization header using the token from localStorage:
+     ```js
+     const token = localStorage.getItem('token');
+     const res = await fetch('/api/rejections', {
+       headers: {
+         'Authorization': token ? 'Bearer ' + token : ''
+       }
+     });
+     ```
+
+========================================
+2) Wire up SUMMARY display on the list page
+========================================
+
+The backend already exposes `/api/rejections/summary` which returns JSON with totalCount and breakdowns (by materialType, defectCategory, supplier).
+
+1) In `public/list.html`, above the table, create a small summary area, for example:
+
+```html
+<div id="summaryContainer" style="margin-bottom: 10px; border: 1px solid #ccc; padding: 8px;">
+  <div><strong>Total Rejections:</strong> <span id="sumTotal"></span></div>
+  <div><strong>By Material Type:</strong> <span id="sumByMaterial"></span></div>
+  <div><strong>Top Defects:</strong> <span id="sumByDefects"></span></div>
+</div>
+In the script that runs when the list page loads:
+
+Fetch /api/rejections/summary with the Authorization header
+
+Fill the spans:
+
+js
+Copy code
+async function loadSummary() {
+  const token = localStorage.getItem('token');
+  const res = await fetch('/api/rejections/summary', {
+    headers: {
+      'Authorization': token ? 'Bearer ' + token : ''
+    }
+  });
+
+  if (!res.ok) {
+    console.error('Failed to load summary');
+    return;
+  }
+
+  const data = await res.json();
+  document.getElementById('sumTotal').textContent = data.totalCount || 0;
+
+  // Build a simple string for material types
+  if (data.byMaterialType) {
+    const mtParts = Object.entries(data.byMaterialType).map(
+      ([k, v]) => `${k}: ${v}`
+    );
+    document.getElementById('sumByMaterial').textContent = mtParts.join(' | ');
+  }
+
+  // Show top few defect categories
+  if (data.byDefectCategory) {
+    const dcParts = Object.entries(data.byDefectCategory)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([k, v]) => `${k}: ${v}`);
+    document.getElementById('sumByDefects').textContent = dcParts.join(' | ');
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  loadSummary();
+  loadRejections(); // existing function that loads the table
+});
+Make sure loadRejections() is adjusted to also use Authorization header.
+
+========================================
+3) Add "Export to Excel" button on the list page
+On public/list.html, above or near the summary, add a button:
+
+html
+Copy code
+<button id="btnExportExcel">Export to Excel</button>
+In the script:
+
+js
+Copy code
+document.getElementById('btnExportExcel').addEventListener('click', () => {
+  const token = localStorage.getItem('token');
+  // Use token as query string or header. Simplest is query string:
+  window.location.href = '/api/rejections/export/excel?token=' + encodeURIComponent(token || '');
+});
+On the backend side, if needed, read the token from query string when header is not present.
+
+Or, alternatively, if you prefer a fetch + blob approach, you can implement it entirely in JS using fetch with Authorization header and then create a temporary link to download the blob.
+
+========================================
+4) Basic auth guard on frontend pages
+For both index.html and list.html:
+
+At the top of the <script> (or in DOMContentLoaded), check if localStorage.getItem('token') is missing.
+
+If there is no token, redirect the user to the login page:
+
+js
+Copy code
+document.addEventListener('DOMContentLoaded', () => {
+  const token = localStorage.getItem('token');
+  if (!token) {
+    window.location.href = '/login.html';
+    return;
+  }
+
+  // existing initialization code here (loadSummary, loadRejections, set defaults, etc.)
+});
+========================================
+5) Final check
+
+After all these changes:
+
+A user must login first to get a token.
+
+The token is stored in localStorage.
+
+All fetch calls (create rejection, list rejections, summary, export) send the Authorization header.
+
+The list page shows:
+
+Summary (total, by material, top defects)
+
+Export to Excel button that downloads the file.
+
+If the user is not logged in, they get redirected to the login page.
+
+Please implement all of this directly in public/index.html, public/list.html, public/login.html (or JS files used by them), and in the routes/controllers if any small backend adjustment is required so everything works without errors.
+
+yaml
+Copy code
+
+---
+
+## 2️⃣ بعد ما تشغّل البرومبت – تعمل شنو؟
+
+1. اضغط **Run** في Replit.  
+2. افتح **login.html**:
+   - جرّب Sign Up + Login  
+3. بعد ما تدخل:
+   - افتح **index.html**  
+   - سجّل رفض جديد  
+4. افتح **list.html**:
+   - المفروض تشوف:
+     - Summary فوق (Total + RAW/PACKING + top defects)  
+     - جدول التقارير  
+     - زر **Export to Excel** → يحمّل ملف Excel جاهز.
+
+لو أي حاجة من دول ما اشتغلت (مثلاً زر الـ Export ما نزّل ملف أو الـ Summary ما ظهر)، انسخ رسالة الخطأ أو صور الشاشة وأنا أقولك بالضبط نعدّل شنو.
+
+---
+
+باختصار:  
+نعم، نكمّل التحديثات دي، والبرومبت فوق هو “المسمار الأخير” اللي يقفل التطبيق ويجهّزو للتجربة مع الفريق 👍
+
+
+
+
+
+

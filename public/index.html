@@ -362,10 +362,14 @@
             alert.style.display = 'none';
 
             const formData = new FormData(form);
+            const token = localStorage.getItem('token');
             
             try {
                 const response = await fetch('/api/rejections/create', {
                     method: 'POST',
+                    headers: {
+                        'Authorization': token ? 'Bearer ' + token : ''
+                    },
                     body: formData
                 });
 
@@ -415,6 +419,11 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location.href = '/login';
+                return;
+            }
             updateDefects();
             setDefaultDateTime();
         });
