@@ -1,0 +1,242 @@
+نحن الآن نريد إنهاء وتثبيت النسخة النهائية من مشروع RejectedMaterialManager في Replit وإعداده للتجربة من قبل فريق الجودة.
+
+المطلوب منك (Ghostwriter) تنفيذ تعديلات شاملة ومنظّمة في backend + frontend + auth + export features كما هو موضّح أدناه.
+
+رجاءً عدّل الملفات مباشرة (server.js, routes, controllers, models, public/*.html) لكي يعمل التطبيق كاملاً بدون أي أخطاء.
+
+🧩 المهام المطلوبة بالتفصيل:
+1) 🔐 إضافة نظام Login + Signup كامل
+Backend changes
+في models/User.js
+
+تأكد من وجود الحقول التالية (وإن لم تكن موجودة، أنشئها):
+
+name: { type: String, required: true },
+employeeId: { type: String, required: true },
+email: { type: String, required: true, unique: true },
+passwordHash: { type: String, required: true },
+role: { type: String, enum: ['ADMIN', 'INSPECTOR', 'SUPERVISOR'], default: 'INSPECTOR' }
+
+إنشاء مسارات Auth:
+
+داخل routes/authRoutes.js:
+
+POST /api/auth/signup
+
+POST /api/auth/login
+
+Sign Up:
+
+ينشئ مستخدم ويخزن:
+
+name
+
+employeeId
+
+email
+
+passwordHash (bcrypt)
+
+role
+
+Login:
+
+يرجع JWT يحتوي على:
+
+{
+  id,
+  name,
+  employeeId,
+  role
+}
+
+
+باستخدام JWT_SECRET الموجود في Secrets.
+
+تعديل middleware/auth.js:
+
+يقرأ Authorization header
+
+يفك الـ JWT
+
+يضيف إلى req.user:
+
+req.user = {
+  id: decoded.id,
+  name: decoded.name,
+  employeeId: decoded.employeeId,
+  role: decoded.role
+};
+
+2) 📝 ربط إنشاء الرفض بالمستخدم المسجّل Login
+
+في controllers/rejectionsController.js داخل createRejection:
+
+استقبل من body:
+
+inspectorName,
+inspectorEmployeeId,
+rejectionDateTime,
+quantityUnit,
+...
+
+
+خزّن بيانات المستخدم logged-in:
+
+enteredByUser: req.user.id,
+enteredByName: req.user.name,
+enteredByEmployeeId: req.user.employeeId,
+
+
+تأكد أنّ route /api/rejections/create محمي:
+
+router.post('/create', authMiddleware, upload.array('images', 10), createRejection);
+
+3) 📊 إضافة SUMMARY API
+
+في controllers/rejectionsController.js:
+
+إنشاء دالة:
+
+getSummary
+
+
+ترجع:
+
+{
+  totalCount,
+  byMaterialType,
+  byDefectCategory,
+  bySupplier
+}
+
+
+واستخدام:
+
+router.get('/summary', authMiddleware, getSummary);
+
+4) 📤 إضافة Export to Excel
+Backend
+
+باستخدام exceljs:
+
+أنشئ دالة:
+
+exportRejectionsExcel
+
+
+تنشئ workbook + worksheet
+
+تضيف الأعمدة:
+
+ID
+Material Type
+Supplier
+Defect Category
+Defect Description
+Quantity Rejected
+Quantity Unit
+Shift Code
+Shift Time
+Rejection DateTime
+Inspector Name
+Inspector Employee ID
+Entered By Name
+Entered By Employee ID
+
+
+وترسل الملف كرد:
+
+Content-Disposition: attachment; filename="rejected_reports.xlsx"
+
+Route:
+router.get('/export/excel', authMiddleware, exportRejectionsExcel);
+
+5) 🖥️ تعديل الواجهة الأمامية
+صفحة login.html:
+
+حقول:
+
+email
+
+password
+وحفظ JWT في localStorage.setItem('token', token)
+ثم redirect إلى /index.html
+
+صفحة index.html (تسجيل الرفض):
+
+تعديل الفورم ليحتوي:
+
+حقل نوع المادة:
+
+RAW / PACKING
+ويغير defectCategory آلياً.
+
+حقل Unit:
+REEL
+INNER-CASES
+CARTON
+SLEEVE
+KG
+
+حقل Rejection Date & Time:
+
+نوع datetime-local مع تعبئة أوتوماتيكية.
+
+إضافة authorization header في fetch:
+headers: {
+  'Authorization': 'Bearer ' + localStorage.getItem('token')
+}
+
+صفحة list.html:
+
+عرض الأعمدة الجديدة:
+
+Quantity Unit
+
+Entered By Name
+
+Entered By Employee ID
+
+زر:
+
+Export to Excel
+
+
+مع:
+
+window.location.href = '/api/rejections/export/excel?token=' + localStorage.getItem('token');
+
+
+عرض Summary أعلى الجدول:
+
+totalCount
+
+RAW vs PACKING
+
+defectCategory breakdown
+استخدام /api/rejections/summary.
+
+6) 🎯 التحقق النهائي
+
+بعد تنفيذ التعديلات:
+
+تسجيل الدخول → يفتح فورم الرفض
+
+إرسال رفض → يتم تخزين enteredBy تلقائياً
+
+قائمة التقارير → تعرض كل شيء
+
+زر Export to Excel يعمل
+
+Summary يظهر
+
+رفع الصور شغال
+
+لا توجد أخطاء في الـ console
+
+التطبيق جاهز للنشر على الفريق
+
+⚠️ رجاءً:
+
+قم بتنفيذ كل التعديلات في الملفات المناسبة مباشرة (server.js, auth routes, rejection routes, controllers, models, public files) واجعل التطبيق يعمل بالكامل بدون أي errors.

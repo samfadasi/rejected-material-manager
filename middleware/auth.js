@@ -1,62 +1,52 @@
 const User = require('../models/User');
+const jwt = require('jsonwebtoken');
+
+const JWT_SECRET = process.env.JWT_SECRET || 'rejected-material-secret-key-2025';
 
 function authMiddleware(req, res, next) {
-  const userIdHeader = req.headers['x-user-id'];
-  const employeeIdHeader = req.headers['x-employee-id'];
-
-  if (!userIdHeader && !employeeIdHeader) {
+  const authHeader = req.headers['authorization'];
+  
+  if (!authHeader) {
     return res.status(401).json({
       success: false,
-      message: 'Unauthorized - No user information provided'
+      message: 'Unauthorized - No token provided'
     });
   }
 
-  let user = null;
+  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : authHeader;
 
-  if (userIdHeader) {
-    user = User.findById(parseInt(userIdHeader));
-  } else if (employeeIdHeader) {
-    user = User.findByEmployeeId(employeeIdHeader);
-  }
-
-  if (!user) {
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    req.user = {
+      id: decoded.id,
+      name: decoded.name,
+      employeeId: decoded.employeeId,
+      role: decoded.role
+    };
+    next();
+  } catch (error) {
     return res.status(401).json({
       success: false,
-      message: 'Unauthorized - User not found'
+      message: 'Unauthorized - Invalid token'
     });
   }
-
-  req.user = {
-    id: user.id,
-    name: user.name,
-    employeeId: user.employeeId,
-    role: user.role,
-    email: user.email
-  };
-
-  next();
 }
 
 function optionalAuthMiddleware(req, res, next) {
-  const userIdHeader = req.headers['x-user-id'];
-  const employeeIdHeader = req.headers['x-employee-id'];
-
-  if (userIdHeader || employeeIdHeader) {
-    let user = null;
-    if (userIdHeader) {
-      user = User.findById(parseInt(userIdHeader));
-    } else if (employeeIdHeader) {
-      user = User.findByEmployeeId(employeeIdHeader);
-    }
-
-    if (user) {
+  const authHeader = req.headers['authorization'];
+  
+  if (authHeader) {
+    const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : authHeader;
+    try {
+      const decoded = jwt.verify(token, JWT_SECRET);
       req.user = {
-        id: user.id,
-        name: user.name,
-        employeeId: user.employeeId,
-        role: user.role,
-        email: user.email
+        id: decoded.id,
+        name: decoded.name,
+        employeeId: decoded.employeeId,
+        role: decoded.role
       };
+    } catch (error) {
+      // Token invalid, but optional so continue
     }
   }
 

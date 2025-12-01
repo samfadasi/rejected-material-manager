@@ -5,7 +5,7 @@ const path = require('path');
 const fs = require('fs');
 const rejectionsController = require('../controllers/rejectionsController');
 const RejectionModel = require('../models/rejection');
-const { optionalAuthMiddleware } = require('../middleware/auth');
+const { authMiddleware, optionalAuthMiddleware } = require('../middleware/auth');
 const User = require('../models/User');
 
 const uploadsDir = path.join(__dirname, '../uploads');
@@ -37,8 +37,10 @@ const upload = multer({
   }
 });
 
-router.post('/create', optionalAuthMiddleware, upload.array('images', 10), rejectionsController.createRejection);
+router.post('/create', authMiddleware, upload.array('images', 10), rejectionsController.createRejection);
 router.get('/', rejectionsController.getAllRejections);
+router.get('/summary', authMiddleware, rejectionsController.getSummary);
+router.get('/export/excel', authMiddleware, rejectionsController.exportRejectionsExcel);
 router.get('/:id', rejectionsController.getRejection);
 router.delete('/:id', rejectionsController.deleteRejection);
 

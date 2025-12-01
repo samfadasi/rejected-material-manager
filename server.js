@@ -3,6 +3,7 @@ const cors = require('cors');
 const bodyParser = require('body-parser');
 const path = require('path');
 const rejectionsRoutes = require('./routes/rejectionsRoutes');
+const authRoutes = require('./routes/authRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -13,10 +14,15 @@ app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
 
 app.use(express.static(path.join(__dirname, 'public')));
 
+app.use('/api/auth', authRoutes);
 app.use('/api/rejections', rejectionsRoutes);
 
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'OK' });
+});
+
+app.get('/login', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'login.html'));
 });
 
 app.get('/', (req, res) => {
