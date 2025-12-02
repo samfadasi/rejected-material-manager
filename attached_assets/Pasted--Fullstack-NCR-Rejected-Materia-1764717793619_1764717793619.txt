@@ -1,0 +1,164 @@
+أريد منك بناء تطبيق ويب كامل (Fullstack) لتقارير عدم المطابقة NCR بنفس أسلوب مشروع "Rejected Material Manager" الذي بنيناه سابقًا على Replit، مع مراعاة ما يلي:
+
+1) التقنية المطلوبة:
+- Backend: Node.js + Express.
+- Database: PostgreSQL (سأستخدم Render، وسيتم توفير DATABASE_URL متغير بيئة).
+- Auth: JWT مع متغير بيئة باسم JWT_SECRET.
+- Frontend: صفحات HTML/CSS/JavaScript بسيطة في مجلد public، بدون React.
+- التوافق مع الاستضافة على Render (استخدام process.env.PORT و process.env.DATABASE_URL).
+
+2) المتطلبات العامة:
+- نفس أسلوب المشروع السابق:
+  - مجلدات: controllers, routes, models, public, uploads (للمرفقات).
+  - ملف server.js كنقطة تشغيل رئيسية.
+  - استخدام CORS و body-parser/express.json().
+  - تخزين المرفقات (صور أو PDF) في مجلد uploads مع حفظ اسم الملف في قاعدة البيانات.
+  - إعداد CORS بشكل يسمح باستخدامه من منصات أخرى مستقبلًا (مثل Vercel أو غيره).
+
+3) نموذج بيانات الـ NCR (Model):
+إنشاء Model باسم NcrReport (أو ncr_reports table) يحتوي على الحقول التالية على الأقل:
+
+- id (Primary Key).
+- ncr_number (String) رقم عدم المطابقة (يمكن توليده تلقائيًا بصيغة مثل NCR-2025-0001).
+- date_raised (Date) تاريخ إصدار الـ NCR.
+- raised_by_name (String) اسم الجهة/المفتش الذي أصدر الـ NCR.
+- raised_by_employee_id (String).
+- department (String) القسم المسؤول (مثال: Production, QA, Maintenance…).
+- process_area (String) منطقة العملية (مثال: Sticks Packing ACF2#11 …).
+- source_type (Enum/String) مصدر الملاحظة مثل:
+  - "Internal Audit"
+  - "Line Inspection"
+  - "Customer Complaint"
+  - "Supplier Issue"
+  - "Regulatory Inspection"
+- nonconformity_description (Text) وصف عدم المطابقة.
+- requirement_reference (String) مرجع المتطلب (SOP, Standard, Specification…).
+- severity (Enum/String) مستوى الخطورة:
+  - "Minor"
+  - "Major"
+  - "Critical"
+- immediate_correction (Text).
+- root_cause (Text).
+- corrective_action (Text).
+- preventive_action (Text).
+- responsible_person (String).
+- target_date (Date).
+- closure_date (Date, nullable).
+- status (Enum/String):
+  - "Open"
+  - "In Progress"
+  - "Closed"
+  - "Overdue" (تحسب تلقائيًا إذا target_date < اليوم و status ليس Closed).
+- attachment_path (String, nullable) مسار المرفق (صورة/ملف PDF).
+- created_at, updated_at (timestamps).
+
+4) المستخدمون والصلاحيات:
+- استخدام نفس منطق الـ Auth الذي بنيناه لمشروع الرفض:
+  - جدول users يحتوي على:
+    - id
+    - name
+    - employee_id
+    - email
+    - password (hashed)
+    - role (مثال: "inspector", "manager", "admin")
+- Endpoints لتسجيل الدخول والتسجيل:
+  - POST /api/auth/signup
+  - POST /api/auth/login
+- استعمال JWT في Authorization header (Bearer token).
+- صلاحيات:
+  - inspector:
+    - إنشاء NCR جديدة.
+    - عرض الـ NCRs الخاصة بالقسم أو كلها (لا مشكلة أن يرى الجميع في هذه النسخة).
+  - manager/admin:
+    - تعديل حقول الحالة (status, closure_date).
+    - تعديل إجراءات التصحيح/المنع.
+    - حذف NCR إذا لزم.
+
+5) API Endpoints للـ NCR:
+إنشاء routes في ملف مستقل مثل routes/ncrRoutes.js مع controller في controllers/ncrController.js، مع النقاط التالية على الأقل:
+
+- POST /api/ncr/create
+  لإنشاء NCR جديد مع دعم رفع مرفق (استخدام multer).
+- GET /api/ncr
+  لإرجاع قائمة بكل الـ NCRs مع إمكانية الفلترة عن طريق query parameters:
+  - ?status=
+  - ?department=
+  - ?severity=
+  - ?source_type=
+  - ?from= & ?to= (مدى تاريخ).
+- GET /api/ncr/:id
+  لجلب NCR واحدة بالتفصيل.
+- PUT /api/ncr/:id
+  لتحديث بيانات NCR (مثلاً root_cause, corrective_action, preventive_action, status, closure_date).
+- DELETE /api/ncr/:id
+  لحذف NCR (صلاحية مدير فقط).
+- GET /api/ncr/summary
+  لإرجاع ملخص إحصائي مثل:
+  - total_ncr
+  - open_ncr
+  - closed_ncr
+  - overdue_ncr
+  - count_by_severity (Minor/Major/Critical)
+  - count_by_department
+- GET /api/ncr/export
+  لإنشاء ملف Excel/CSV يحتوي على كل الـ NCRs مع الأعمدة الرئيسية، وإرساله كـ downloadable response (Content-Disposition: attachment).
+
+6) واجهة المستخدم (Frontend):
+إنشاء الصفحات التالية في مجلد public:
+
+A) صفحة login.html:
+- نموذج بسيط (email, password).
+- عند النجاح يحفظ الـ JWT في localStorage.
+- إعادة توجيه إلى ncr-list.html.
+
+B) صفحة ncr-new.html:
+- نموذج إدخال NCR جديد يحتوي الحقول الأساسية:
+  - Date (افتراضي تاريخ اليوم)
+  - Department (قائمة منسدلة)
+  - Process Area (حقل نصي)
+  - Source Type (قائمة منسدلة بالقيم المذكورة سابقًا)
+  - Severity (Minor/Major/Critical)
+  - Nonconformity Description
+  - Requirement Reference
+  - Immediate Correction
+  - Root Cause
+  - Corrective Action
+  - Preventive Action
+  - Responsible Person
+  - Target Date
+  - Attachment (ملف واحد صورة أو PDF)
+- عند الإرسال، يضيف الـ JWT في Authorization header ويرسل الطلب لـ /api/ncr/create.
+
+C) صفحة ncr-list.html:
+- جدول بكل الـ NCRs.
+- أعلى الصفحة:
+  - فلاتر (status, department, severity, date range).
+  - زر "New NCR" يفتح ncr-new.html.
+  - قسم صغير يعرض الـ summary (open/closed/overdue + حسب الخطورة).
+  - زر "Export to Excel/CSV" يستدعي /api/ncr/export.
+- عند الضغط على أي صف، يتم فتح تفاصيل الـ NCR في نافذة Modal أو صفحة منفصلة ncr-detail.html.
+
+D) صفحة ncr-detail.html:
+- عرض كل الحقول:
+  - إمكانية تعديل status, closure_date, root_cause, corrective_action, preventive_action للمستخدمين ذوي دور manager/admin.
+- عرض رابط تحميل/عرض المرفق إن وجد.
+
+7) إعدادات السيرفر:
+- في server.js:
+  - استخدام process.env.DATABASE_URL للاتصال بقاعدة البيانات عبر pg أو أي ORM بسيط تراه مناسبًا.
+  - تفعيل CORS.
+  - serve static files من public/.
+  - جعل المسار الجذري "/" يعيد التوجيه إلى /login.html.
+  - استخدام PORT من process.env.PORT أو 3000 افتراضيًا (لـ Replit).
+
+8) التجهيز للنشر على Render:
+- تأكد من أن:
+  - سكربت start في package.json = "node server.js".
+  - السكربت build غير مطلوب (يمكن تركه فارغًا).
+  - لا تعتمد على localhost ثابت في الواجهة، استخدم relative URLs (/api/…).
+  - التطبيق يعمل بشكل كامل باستخدام:
+    - JWT_SECRET من متغير البيئة.
+    - DATABASE_URL من Render (PostgreSQL database).
+- رجاءً أنشئ كل الملفات والمجلدات الضرورية (server.js, models/ncrModel.js, controllers/ncrController.js, routes/ncrRoutes.js, public/*.html, public/*.js، إلخ) واملأها بالكود الكامل الجاهز للتشغيل.
+
+عند الانتهاء، أعطني ملخصًا للملفات التي أنشأتها، وأي خطوات إضافية يجب عليّ عملها يدويًا (مثل إعداد متغيرات البيئة JWT_SECRET و DATABASE_URL على Render).
