@@ -4,7 +4,7 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const ncrController = require('../controllers/ncrController');
-const { authMiddleware, managerOrAdminOnly } = require('../middleware/ncrAuth');
+const { verifyToken, requireRole } = require('../middleware/ncrAuth');
 
 const uploadsDir = path.join(__dirname, '../uploads');
 if (!fs.existsSync(uploadsDir)) {
@@ -42,12 +42,15 @@ const upload = multer({
   fileFilter: fileFilter
 });
 
-router.post('/create', authMiddleware, upload.single('attachment'), ncrController.createNcr);
-router.get('/', authMiddleware, ncrController.getAllNcrs);
-router.get('/summary', authMiddleware, ncrController.getSummary);
-router.get('/export', authMiddleware, ncrController.exportToExcel);
-router.get('/:id', authMiddleware, ncrController.getNcrById);
-router.put('/:id', authMiddleware, upload.single('attachment'), ncrController.updateNcr);
-router.delete('/:id', authMiddleware, managerOrAdminOnly, ncrController.deleteNcr);
+router.get('/summary', verifyToken, ncrController.getSummary);
+router.get('/export/csv', verifyToken, ncrController.exportToCsv);
+router.get('/export/excel', verifyToken, ncrController.exportToExcel);
+
+router.post('/', verifyToken, upload.single('attachment'), ncrController.createNcr);
+router.get('/', verifyToken, ncrController.getAllNcrs);
+router.get('/:id', verifyToken, ncrController.getNcrById);
+router.put('/:id', verifyToken, upload.single('attachment'), ncrController.updateNcr);
+router.patch('/:id/status', verifyToken, requireRole('ENGINEER', 'MANAGER', 'ADMIN'), ncrController.updateNcrStatus);
+router.delete('/:id', verifyToken, requireRole('ADMIN'), ncrController.deleteNcr);
 
 module.exports = router;

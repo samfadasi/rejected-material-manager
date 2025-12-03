@@ -3,20 +3,20 @@ const bcrypt = require('bcrypt');
 
 class UserModel {
   static async create(userData) {
-    const { name, employee_id, email, password, role = 'inspector' } = userData;
+    const { name, employee_id, email, password, role = 'INSPECTOR' } = userData;
     
     const existingUser = await this.findByEmail(email);
     if (existingUser) {
       throw new Error('Email already exists');
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const password_hash = await bcrypt.hash(password, 10);
 
     const result = await pool.query(
-      `INSERT INTO users (name, employee_id, email, password, role)
+      `INSERT INTO users (name, employee_id, email, password_hash, role)
        VALUES ($1, $2, $3, $4, $5)
        RETURNING id, name, employee_id, email, role, created_at`,
-      [name, employee_id, email, hashedPassword, role]
+      [name, employee_id, email, password_hash, role]
     );
 
     return result.rows[0];

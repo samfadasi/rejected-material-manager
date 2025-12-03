@@ -8,7 +8,7 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #1e88e5 0%, #1565c0 100%);
+            background: linear-gradient(135deg, #1565c0 0%, #0d47a1 100%);
             display: flex;
             justify-content: center;
             align-items: center;
@@ -56,8 +56,8 @@
         }
         input:focus {
             outline: none;
-            border-color: #1e88e5;
-            box-shadow: 0 0 0 3px rgba(30, 136, 229, 0.1);
+            border-color: #1565c0;
+            box-shadow: 0 0 0 3px rgba(21, 101, 192, 0.1);
         }
         button {
             width: 100%;
@@ -70,13 +70,13 @@
             transition: all 0.3s;
         }
         .btn-login {
-            background: linear-gradient(135deg, #1e88e5 0%, #1565c0 100%);
+            background: linear-gradient(135deg, #1565c0 0%, #0d47a1 100%);
             color: white;
             margin-bottom: 10px;
         }
         .btn-login:hover {
             transform: translateY(-2px);
-            box-shadow: 0 5px 20px rgba(30, 136, 229, 0.4);
+            box-shadow: 0 5px 20px rgba(21, 101, 192, 0.4);
         }
         .btn-signup {
             background: #f5f5f5;
@@ -113,7 +113,7 @@
             width: 30px;
             height: 30px;
             border: 3px solid #f0f0f0;
-            border-top: 3px solid #1e88e5;
+            border-top: 3px solid #1565c0;
             border-radius: 50%;
             animation: spin 1s linear infinite;
             margin: 0 auto;
@@ -139,8 +139,8 @@
             transition: all 0.3s;
         }
         .form-tab.active {
-            color: #1e88e5;
-            border-bottom-color: #1e88e5;
+            color: #1565c0;
+            border-bottom-color: #1565c0;
         }
         .form-content {
             display: none;
@@ -158,7 +158,7 @@
         }
         select:focus {
             outline: none;
-            border-color: #1e88e5;
+            border-color: #1565c0;
         }
     </style>
 </head>
@@ -203,14 +203,6 @@
             <div class="form-group">
                 <label for="signupEmployeeId">Employee ID *</label>
                 <input type="text" id="signupEmployeeId" name="employee_id" required placeholder="EMP-0001">
-            </div>
-            <div class="form-group">
-                <label for="signupRole">Role *</label>
-                <select id="signupRole" name="role">
-                    <option value="inspector">Inspector</option>
-                    <option value="manager">Manager</option>
-                    <option value="admin">Admin</option>
-                </select>
             </div>
             <div class="form-group">
                 <label for="signupPassword">Password *</label>
@@ -288,7 +280,6 @@
                         name: document.getElementById('signupName').value,
                         email: document.getElementById('signupEmail').value,
                         employee_id: document.getElementById('signupEmployeeId').value,
-                        role: document.getElementById('signupRole').value,
                         password: document.getElementById('signupPassword').value
                     })
                 });

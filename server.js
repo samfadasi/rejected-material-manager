@@ -6,6 +6,7 @@ const rejectionsRoutes = require('./routes/rejectionsRoutes');
 const authRoutes = require('./routes/authRoutes');
 const ncrAuthRoutes = require('./routes/ncrAuthRoutes');
 const ncrRoutes = require('./routes/ncrRoutes');
+const noCache = require('./middleware/noCache');
 const { initDatabase } = require('./models/db');
 
 const app = express();
@@ -19,32 +20,25 @@ const corsOptions = {
 };
 app.use(cors(corsOptions));
 
-app.use((req, res, next) => {
-  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
-  res.set('Pragma', 'no-cache');
-  res.set('Expires', '0');
-  res.set('Surrogate-Control', 'no-store');
-  next();
-});
+app.use(noCache);
 
 app.use(bodyParser.json({ limit: '50mb' }));
 app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
 
 app.use(express.static(path.join(__dirname, 'public')));
-
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 app.use('/api/auth', authRoutes);
 app.use('/api/rejections', rejectionsRoutes);
 app.use('/api/ncr-auth', ncrAuthRoutes);
 
-app.use('/api/ncr/export', (req, res, next) => {
+app.use('/api/ncrs/export', (req, res, next) => {
   if (req.query.token && !req.headers['authorization']) {
     req.headers['authorization'] = 'Bearer ' + req.query.token;
   }
   next();
 });
-app.use('/api/ncr', ncrRoutes);
+app.use('/api/ncrs', ncrRoutes);
 
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'OK' });

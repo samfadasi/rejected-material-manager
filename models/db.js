@@ -2,7 +2,9 @@ const { Pool } = require('pg');
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: process.env.DATABASE_URL ? { rejectUnauthorized: false } : false
+  ssl: process.env.DATABASE_URL && process.env.NODE_ENV === 'production' 
+    ? { rejectUnauthorized: false } 
+    : false
 });
 
 pool.on('connect', () => {
@@ -21,10 +23,9 @@ const initDatabase = async () => {
         name VARCHAR(255) NOT NULL,
         employee_id VARCHAR(100) NOT NULL,
         email VARCHAR(255) UNIQUE NOT NULL,
-        password VARCHAR(255) NOT NULL,
-        role VARCHAR(50) DEFAULT 'inspector',
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        password_hash VARCHAR(255) NOT NULL,
+        role VARCHAR(50) DEFAULT 'INSPECTOR',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
 
@@ -32,27 +33,37 @@ const initDatabase = async () => {
       CREATE TABLE IF NOT EXISTS ncr_reports (
         id SERIAL PRIMARY KEY,
         ncr_number VARCHAR(50) UNIQUE NOT NULL,
-        date_raised DATE NOT NULL,
-        raised_by_name VARCHAR(255) NOT NULL,
-        raised_by_employee_id VARCHAR(100),
-        department VARCHAR(100) NOT NULL,
-        process_area VARCHAR(255),
-        source_type VARCHAR(100) NOT NULL,
-        nonconformity_description TEXT NOT NULL,
-        requirement_reference VARCHAR(255),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        report_date TIMESTAMP NOT NULL,
+        area VARCHAR(255),
+        line VARCHAR(100),
+        product_name VARCHAR(255),
+        product_code VARCHAR(100),
+        ncr_source VARCHAR(100),
+        ncr_type VARCHAR(100),
         severity VARCHAR(50) NOT NULL,
-        immediate_correction TEXT,
+        description TEXT NOT NULL,
+        immediate_action TEXT,
         root_cause TEXT,
+        root_cause_category VARCHAR(100),
         corrective_action TEXT,
         preventive_action TEXT,
         responsible_person VARCHAR(255),
+        responsible_department VARCHAR(255),
         target_date DATE,
         closure_date DATE,
         status VARCHAR(50) DEFAULT 'Open',
+        raised_by_name VARCHAR(255),
+        raised_by_id VARCHAR(100),
+        verified_by_name VARCHAR(255),
+        verified_by_id VARCHAR(100),
+        approved_by_name VARCHAR(255),
+        approved_by_id VARCHAR(100),
+        process_area VARCHAR(255),
+        remarks TEXT,
         attachment_path VARCHAR(500),
-        created_by_user_id INTEGER REFERENCES users(id),
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        created_by_user_id INTEGER REFERENCES users(id)
       )
     `);
 

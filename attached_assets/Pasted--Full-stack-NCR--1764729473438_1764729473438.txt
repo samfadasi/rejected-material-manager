@@ -1,0 +1,279 @@
+أريدك أن تبني لي تطبيق ويب متكامل (Full-stack) لإدارة تقارير عدم المطابقة (NCR) بنفس أسلوب المشروع السابق "Rejected Material Manager"، مع العلم أنني سأستخدم Replit للتطوير، GitHub لحفظ الكود، و Render لنشر التطبيق مع PostgreSQL كقاعدة بيانات.
+
+التقنية المطلوبة:
+- Backend: Node.js + Express
+- Database: PostgreSQL (باستخدام متغير بيئة DATABASE_URL)
+- Frontend: صفحات HTML + CSS + JavaScript عادية داخل مجلد public
+- Authentication: JWT مع تخزين الـ JWT في localStorage بالفرونت
+- استخدام متغيرات البيئة:
+  - DATABASE_URL
+  - JWT_SECRET
+  - NODE_ENV=production في Render
+- السيرفر يجب أن يستخدم process.env.PORT أو 3000 كخيار افتراضي
+- تفعيل CORS مع إعدادات مناسبة لـ Render/Vercel/Netlify
+- إضافة middleware يمنع الكاش (no-cache headers) للصفحات المحمية
+- المسار "/" يعيد توجيه المستخدم إلى "login.html" مباشرة
+
+1) نموذج البيانات (Database Models)
+
+أنشئ جدولاً رئيسياً لعدم المطابقة NCRs مثلاً باسم ncr_reports بالحقول التالية (أسماء الحقول بالإنجليزية):
+
+- id (Primary key, auto-increment or UUID)
+- ncr_number (string, unique, يُنشأ أوتوماتيكياً مثل NCR-2025-0001)
+- created_at (timestamp, default now)
+- updated_at (timestamp)
+- report_date (date + time)
+- area (string) – مثال: "Sticks Packing", "Coating", "Warehouse"
+- line (string) – رقم أو اسم خط الإنتاج
+- product_name (string)
+- product_code (string, اختياري)
+- ncr_source (enum/string) – قيم مقترحة:
+  - "Internal Audit"
+  - "Customer Complaint"
+  - "Supplier Non-conformance"
+  - "Production Line"
+  - "Warehouse / Logistics"
+- ncr_type (enum/string) – مثل:
+  - "Material"
+  - "Process"
+  - "Documentation"
+  - "Safety"
+  - "Hygiene"
+- severity (enum/string) – مثل:
+  - "Critical"
+  - "Major"
+  - "Minor"
+- description (text) – وصف عدم المطابقة
+- immediate_action (text) – الإجراء التصحيحي الفوري
+- root_cause (text) – تحليل السبب الجذري
+- root_cause_category (enum/string) – مثل:
+  - "Man"
+  - "Machine"
+  - "Method"
+  - "Material"
+  - "Environment"
+  - "Measurement"
+- corrective_action (text)
+- preventive_action (text)
+- responsible_person (string)
+- responsible_department (string)
+- target_date (date) – تاريخ الإقفال المستهدف
+- closure_date (date, nullable)
+- status (enum/string) – قيم مثل:
+  - "Open"
+  - "In Progress"
+  - "Waiting for Verification"
+  - "Closed"
+- raised_by_name (string) – اسم الشخص الذي أصدر الـ NCR
+- raised_by_id (string) – رقم الموظف
+- verified_by_name (string, nullable)
+- verified_by_id (string, nullable)
+- approved_by_name (string, nullable)
+- approved_by_id (string, nullable)
+- process_area (string) – منطقة العملية بالتفصيل
+- remarks (text, nullable)
+- attachment_path (string, nullable) – مسار صورة أو ملف مرفق إن أردنا رفع ملفات لاحقاً
+
+أنشئ أيضاً جدول users لإدارة المستخدمين بالأعمدة:
+
+- id
+- name
+- employee_id
+- email (unique)
+- password_hash (Bcrypt)
+- role (enum/string) بقيم:
+  - "INSPECTOR"
+  - "ENGINEER"
+  - "MANAGER"
+  - "ADMIN"
+- created_at
+
+يمكنك استخدام مكتبة مثل pg أو أي ORM خفيف (pg-promise أو knex)، لكن الأفضل الآن استخدام pg فقط واستعلامات SQL بسيطة.
+
+2) الـ Backend (Express API)
+
+أنشئ server.js بحيث يقوم بالآتي:
+
+- الاتصال بقاعدة البيانات PostgreSQL باستخدام DATABASE_URL
+- إعداد CORS للسماح بالوصول من أي origin في هذه المرحلة
+- إضافة middleware:
+  - JSON body parser
+  - no-cache headers للـ API والصفحات المحمية
+- إضافة static middleware لخدمة ملفات الواجهة من مجلد "public"
+  express.static("public")
+
+المسار "/":
+- يقوم بعمل redirect إلى "/login.html"
+
+إنشاء مجموعة مسارات (routes) للـ Auth:
+
+- POST /api/auth/register
+  - لإنشاء مستخدم جديد (ADMIN فقط فيما بعد)
+- POST /api/auth/login
+  - يستقبل email و password
+  - يتحقق من المستخدم
+  - يرجع JWT يحتوي على:
+    { userId, name, role }
+
+استخدم JWT_SECRET لتوقيع التوكن.
+
+أنشئ middleware للتحقق من الـ JWT:
+
+- verifyToken: يتحقق من Authorization: Bearer <token>
+- attach user info إلى req.user
+- أنشئ middleware آخر للتحقق من الدور (role) مثل:
+  - requireRole("MANAGER") أو requireRole("ADMIN")
+
+إنشاء مسارات NCR:
+
+- POST /api/ncrs
+  - إنشاء NCR جديد
+  - يأخذ كل الحقول الضرورية
+  - يولّد ncr_number أوتوماتيكياً
+  - يخزن raised_by_* من المستخدم الحالي (req.user)
+- GET /api/ncrs
+  - يرجع قائمة NCRs مع دعم الفلاتر عبر query string:
+    - status
+    - severity
+    - area
+    - department
+    - from_date و to_date
+- GET /api/ncrs/:id
+  - يرجع تفاصيل NCR واحدة
+- PUT /api/ncrs/:id
+  - لتحديث الحقول (مثلاً تعيين root_cause, corrective_action, preventive_action, target_date إلخ)
+- PATCH /api/ncrs/:id/status
+  - لتغيير الحالة (Open, In Progress, Waiting for Verification, Closed)
+  - تحديث closure_date تلقائياً عند التغيير إلى "Closed"
+- DELETE /api/ncrs/:id
+  - حذف NCR (مقيد للأدمن فقط)
+
+إنشاء مسار للتقارير (Reporting + Export):
+
+- GET /api/ncrs/summary
+  يرجع JSON فيه:
+  - total_open
+  - total_closed
+  - total_overdue (target_date < اليوم والحالة ليست Closed)
+  - count_by_severity: عدد لكل من Critical / Major / Minor
+  - count_by_type: Material / Process / Documentation / Safety / Hygiene
+- GET /api/ncrs/export/csv
+  - يرجع ملف CSV (content-type text/csv)
+  - يشمل الأعمدة الأساسية وأهم الحقول
+  - يدعم نفس الفلاتر (status, date range, severity, ...)
+
+3) واجهة المستخدم (Frontend)
+
+داخل مجلد public أنشئ الصفحات التالية:
+
+- login.html
+  - فورم يحتوي على:
+    - Email
+    - Password
+  - عند الضغط على Login:
+    - يرسل طلب POST إلى /api/auth/login
+    - إذا نجح، يخزن الـ JWT في localStorage
+    - يحول المستخدم إلى "ncr-list.html"
+
+- ncr-list.html
+  - جدول يعرض قائمة NCRs:
+    - NCR No
+    - Date
+    - Area
+    - Line
+    - Product
+    - Severity
+    - Status
+  - فوق الجدول يوجد فلاتر:
+    - Date range (from/to)
+    - Status (dropdown)
+    - Severity (dropdown)
+    - Area (dropdown أو input)
+  - زر "New NCR" يفتح صفحة "ncr-new.html"
+  - عند الضغط على أي صف، يفتح "ncr-detail.html?id=..."
+  - زر "Export CSV" يرسل طلب إلى /api/ncrs/export/csv بنفس الفلاتر وينزّل الملف للعميل
+
+- ncr-new.html
+  - فورم لتسجيل NCR جديد يحتوي على الحقول الأساسية:
+    - area, line, product_name, product_code
+    - ncr_source, ncr_type, severity
+    - description
+    - immediate_action
+    - process_area
+    - responsible_department, responsible_person
+    - target_date
+  - عند الحفظ يرسل POST /api/ncrs
+  - يأخذ raised_by_name و raised_by_id من المستخدم الحالي (من JWT)
+
+- ncr-detail.html
+  - تعرض كل تفاصيل الـ NCR
+  - توفر حقول editable للمهندس / المانجر مثل:
+    - root_cause
+    - root_cause_category
+    - corrective_action
+    - preventive_action
+    - status
+    - target_date
+  - حفظ التعديلات عبر PUT /api/ncrs/:id
+  - زر لتغيير الحالة (status) عبر PATCH /api/ncrs/:id/status
+
+- dashboard.html (للمدير والـ Admin)
+  - تعرض ملخص الأرقام القادمة من /api/ncrs/summary
+  - مثلاً:
+    - Cards:
+      - Open NCRs
+      - Overdue NCRs
+      - Closed this month
+    - جداول بسيطة مثل:
+      - عدد NCRs حسب الـ severity
+      - عدد NCRs حسب الـ department
+  - يكفي عرضها في جداول/بطاقات نصية، لا حاجة لجرافيكس معقدة الآن.
+
+4) حماية الصفحات بالفرونت إند
+
+- جميع الصفحات ما عدا login.html يجب أن تتحقق أولاً من وجود JWT في localStorage:
+  - إذا لا يوجد توكن → إعادة توجيه إلى login.html
+- عند عمل logout:
+  - حذف التوكن من localStorage
+  - إعادة التوجيه لصفحة login.html
+
+5) إعدادات خاصة بـ Render
+
+- تأكد أن السيرفر يستخدم:
+  - process.env.PORT || 3000
+  - process.env.DATABASE_URL للاتصال بقاعدة البيانات
+  - process.env.JWT_SECRET لتوقيع JWT
+- فعّل CORS بحيث يسمح على الأقل لجميع الـ origins في هذه المرحلة (origin: "*")
+- أضف middleware لإرجاع هيدر:
+  - Cache-Control: no-store, no-cache, must-revalidate, proxy-revalidate
+  - Pragma: no-cache
+  - Expires: 0
+
+6) الترتيب النهائي
+
+- أنشئ هيكل المشروع كالتالي:
+  - server.js
+  - db.js (اتصال PostgreSQL)
+  - routes/
+    - authRoutes.js
+    - ncrRoutes.js
+    - reportRoutes.js
+  - controllers/
+    - authController.js
+    - ncrController.js
+    - reportController.js
+  - middleware/
+    - authMiddleware.js (verifyToken, requireRole)
+    - noCache.js
+  - public/
+    - login.html
+    - ncr-list.html
+    - ncr-new.html
+    - ncr-detail.html
+    - dashboard.html
+    - main.css
+    - app.js أو ملفات JS منفصلة لكل صفحة
+- أضف سكربت start في package.json:
+  "start": "node server.js"
+
+رجاءً قم ببناء هذا التطبيق كاملاً من الصفر بهذه المواصفات، مع كود نظيف ومقسّم، مع تعليقات توضيحية حيث يلزم، وتجهيز كل شيء بحيث أستطيع نشره بعد ذلك على Render بنفس طريقة مشروع Rejected Material Manager.

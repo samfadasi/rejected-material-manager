@@ -8,7 +8,7 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #1e88e5 0%, #1565c0 100%);
+            background: linear-gradient(135deg, #1565c0 0%, #0d47a1 100%);
             min-height: 100vh;
             padding: 20px;
         }
@@ -16,7 +16,7 @@
             background: white;
             border-radius: 12px;
             box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
-            max-width: 900px;
+            max-width: 1000px;
             margin: 0 auto;
             padding: 30px;
         }
@@ -40,7 +40,7 @@
         }
         .form-row {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 20px;
             margin-bottom: 20px;
         }
@@ -64,7 +64,7 @@
         }
         input:focus, select:focus, textarea:focus {
             outline: none;
-            border-color: #1e88e5;
+            border-color: #1565c0;
         }
         textarea {
             resize: vertical;
@@ -80,12 +80,12 @@
             transition: all 0.3s;
         }
         .btn-primary {
-            background: linear-gradient(135deg, #1e88e5 0%, #1565c0 100%);
+            background: linear-gradient(135deg, #1565c0 0%, #0d47a1 100%);
             color: white;
         }
         .btn-primary:hover {
             transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(30, 136, 229, 0.4);
+            box-shadow: 0 5px 15px rgba(21, 101, 192, 0.4);
         }
         .btn-secondary {
             background: #f5f5f5;
@@ -138,7 +138,7 @@
             transition: all 0.3s;
         }
         .file-label:hover {
-            border-color: #1e88e5;
+            border-color: #1565c0;
             background: #e3f2fd;
         }
         .file-label.has-file {
@@ -154,7 +154,7 @@
             width: 30px;
             height: 30px;
             border: 3px solid #f0f0f0;
-            border-top: 3px solid #1e88e5;
+            border-top: 3px solid #1565c0;
             border-radius: 50%;
             animation: spin 1s linear infinite;
             margin: 0 auto;
@@ -192,38 +192,63 @@
             <div class="section-title">Basic Information</div>
             <div class="form-row">
                 <div class="form-group">
-                    <label for="date_raised">Date Raised *</label>
-                    <input type="date" id="date_raised" name="date_raised" required>
+                    <label for="report_date">Report Date *</label>
+                    <input type="datetime-local" id="report_date" name="report_date" required>
                 </div>
                 <div class="form-group">
-                    <label for="department">Department *</label>
-                    <select id="department" name="department" required>
-                        <option value="">Select Department</option>
-                        <option value="Production">Production</option>
-                        <option value="Quality Assurance">Quality Assurance</option>
-                        <option value="Maintenance">Maintenance</option>
+                    <label for="area">Area *</label>
+                    <select id="area" name="area" required>
+                        <option value="">Select Area</option>
+                        <option value="Sticks Packing">Sticks Packing</option>
+                        <option value="Coating">Coating</option>
                         <option value="Warehouse">Warehouse</option>
-                        <option value="Logistics">Logistics</option>
-                        <option value="R&D">R&D</option>
-                        <option value="Procurement">Procurement</option>
+                        <option value="Production Line">Production Line</option>
+                        <option value="Quality Lab">Quality Lab</option>
+                        <option value="Maintenance">Maintenance</option>
                     </select>
                 </div>
                 <div class="form-group">
-                    <label for="process_area">Process Area</label>
-                    <input type="text" id="process_area" name="process_area" placeholder="e.g., Sticks Packing ACF2#11">
+                    <label for="line">Line</label>
+                    <input type="text" id="line" name="line" placeholder="e.g., Line 1, ACF2#11">
                 </div>
             </div>
 
             <div class="form-row">
                 <div class="form-group">
-                    <label for="source_type">Source Type *</label>
-                    <select id="source_type" name="source_type" required>
+                    <label for="product_name">Product Name</label>
+                    <input type="text" id="product_name" name="product_name" placeholder="Product name">
+                </div>
+                <div class="form-group">
+                    <label for="product_code">Product Code</label>
+                    <input type="text" id="product_code" name="product_code" placeholder="Product code">
+                </div>
+                <div class="form-group">
+                    <label for="process_area">Process Area</label>
+                    <input type="text" id="process_area" name="process_area" placeholder="Detailed process area">
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="ncr_source">NCR Source *</label>
+                    <select id="ncr_source" name="ncr_source" required>
                         <option value="">Select Source</option>
                         <option value="Internal Audit">Internal Audit</option>
-                        <option value="Line Inspection">Line Inspection</option>
                         <option value="Customer Complaint">Customer Complaint</option>
-                        <option value="Supplier Issue">Supplier Issue</option>
-                        <option value="Regulatory Inspection">Regulatory Inspection</option>
+                        <option value="Supplier Non-conformance">Supplier Non-conformance</option>
+                        <option value="Production Line">Production Line</option>
+                        <option value="Warehouse / Logistics">Warehouse / Logistics</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="ncr_type">NCR Type *</label>
+                    <select id="ncr_type" name="ncr_type" required>
+                        <option value="">Select Type</option>
+                        <option value="Material">Material</option>
+                        <option value="Process">Process</option>
+                        <option value="Documentation">Documentation</option>
+                        <option value="Safety">Safety</option>
+                        <option value="Hygiene">Hygiene</option>
                     </select>
                 </div>
                 <div class="form-group">
@@ -239,39 +264,31 @@
 
             <div class="section-title">Non-Conformity Details</div>
             <div class="form-group">
-                <label for="nonconformity_description">Non-Conformity Description *</label>
-                <textarea id="nonconformity_description" name="nonconformity_description" required 
+                <label for="description">Non-Conformity Description *</label>
+                <textarea id="description" name="description" required 
                     placeholder="Describe the non-conformity in detail..."></textarea>
             </div>
             <div class="form-group">
-                <label for="requirement_reference">Requirement Reference</label>
-                <input type="text" id="requirement_reference" name="requirement_reference" 
-                    placeholder="SOP, Standard, Specification reference...">
-            </div>
-
-            <div class="section-title">Corrective Actions</div>
-            <div class="form-group">
-                <label for="immediate_correction">Immediate Correction</label>
-                <textarea id="immediate_correction" name="immediate_correction" 
+                <label for="immediate_action">Immediate Action</label>
+                <textarea id="immediate_action" name="immediate_action" 
                     placeholder="Immediate action taken to address the issue..."></textarea>
-            </div>
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="root_cause">Root Cause</label>
-                    <textarea id="root_cause" name="root_cause" placeholder="Root cause analysis..."></textarea>
-                </div>
-                <div class="form-group">
-                    <label for="corrective_action">Corrective Action</label>
-                    <textarea id="corrective_action" name="corrective_action" placeholder="Corrective action to prevent recurrence..."></textarea>
-                </div>
-            </div>
-            <div class="form-group">
-                <label for="preventive_action">Preventive Action</label>
-                <textarea id="preventive_action" name="preventive_action" placeholder="Preventive measures..."></textarea>
             </div>
 
             <div class="section-title">Responsibility & Timeline</div>
             <div class="form-row">
+                <div class="form-group">
+                    <label for="responsible_department">Responsible Department</label>
+                    <select id="responsible_department" name="responsible_department">
+                        <option value="">Select Department</option>
+                        <option value="Production">Production</option>
+                        <option value="Quality Assurance">Quality Assurance</option>
+                        <option value="Maintenance">Maintenance</option>
+                        <option value="Warehouse">Warehouse</option>
+                        <option value="Logistics">Logistics</option>
+                        <option value="R&D">R&D</option>
+                        <option value="Procurement">Procurement</option>
+                    </select>
+                </div>
                 <div class="form-group">
                     <label for="responsible_person">Responsible Person</label>
                     <input type="text" id="responsible_person" name="responsible_person" placeholder="Name of responsible person">
@@ -317,8 +334,9 @@
             const user = JSON.parse(localStorage.getItem('ncr_user') || '{}');
             userInfo.textContent = `Logged in as: ${user.name || 'User'}`;
 
-            const today = new Date().toISOString().split('T')[0];
-            document.getElementById('date_raised').value = today;
+            const now = new Date();
+            now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+            document.getElementById('report_date').value = now.toISOString().slice(0, 16);
         });
 
         fileInput.addEventListener('change', () => {
@@ -345,7 +363,7 @@
             const formData = new FormData(form);
 
             try {
-                const response = await fetch('/api/ncr/create', {
+                const response = await fetch('/api/ncrs', {
                     method: 'POST',
                     headers: {
                         'Authorization': token ? 'Bearer ' + token : ''

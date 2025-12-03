@@ -2,7 +2,7 @@ const jwt = require('jsonwebtoken');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'ncr-manager-secret-key-2025';
 
-function authMiddleware(req, res, next) {
+function verifyToken(req, res, next) {
   const authHeader = req.headers['authorization'];
   
   if (!authHeader) {
@@ -17,7 +17,7 @@ function authMiddleware(req, res, next) {
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
     req.user = {
-      id: decoded.id,
+      userId: decoded.userId,
       name: decoded.name,
       employee_id: decoded.employee_id,
       role: decoded.role
@@ -31,22 +31,24 @@ function authMiddleware(req, res, next) {
   }
 }
 
-function managerOrAdminOnly(req, res, next) {
-  if (!req.user) {
-    return res.status(401).json({
-      success: false,
-      message: 'Unauthorized'
-    });
-  }
+function requireRole(...roles) {
+  return (req, res, next) => {
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        message: 'Unauthorized'
+      });
+    }
 
-  if (req.user.role !== 'manager' && req.user.role !== 'admin') {
-    return res.status(403).json({
-      success: false,
-      message: 'Access denied - Manager or Admin role required'
-    });
-  }
+    if (!roles.includes(req.user.role)) {
+      return res.status(403).json({
+        success: false,
+        message: `Access denied - Required role: ${roles.join(' or ')}`
+      });
+    }
 
-  next();
+    next();
+  };
 }
 
 function optionalAuth(req, res, next) {
@@ -57,17 +59,16 @@ function optionalAuth(req, res, next) {
     try {
       const decoded = jwt.verify(token, JWT_SECRET);
       req.user = {
-        id: decoded.id,
+        userId: decoded.userId,
         name: decoded.name,
         employee_id: decoded.employee_id,
         role: decoded.role
       };
     } catch (error) {
-      // Token invalid but optional
     }
   }
 
   next();
 }
 
-module.exports = { authMiddleware, managerOrAdminOnly, optionalAuth };
+module.exports = { verifyToken, requireRole, optionalAuth };
